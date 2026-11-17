@@ -1,0 +1,6 @@
+{
+  "name": "Шумора — Limit Counter",
+  "description": "Mobile-first tactile counter with a configurable target limit, seamless overflow counting, decrement controls, and a dedicated reset-to-zero button that preserves your limit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,11 +1,16 @@
-<div align="center">
+# Шумора — Smart Counter (Android APK)
 
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+Барномаи Android-и **Шумора** ба воситаи Capacitor барои сохтани **APK** тавассути **GitHub Actions** танзим шудааст.
 
-  <h1>Built with AI Studio</h2>
+## Чӣ тавр APK-ро аз GitHub гирифтан мумкин аст?
 
-  <p>The fastest path from prompt to production with Gemini.</p>
+1. Лоиҳаро ба репозиторияи **GitHub**-и худ боргузорӣ (`push` ё `upload`) кунед (дар шохаи `main` ё `master`).
+2. Дар GitHub ба бахши **Actions** дароед — раванди **Build Android APK** худкор оғоз мешавад (инчунин метавонед тугмаи **Run workflow**-ро дастӣ пахш кунед).
+3. Пас аз анҷоми сохт, дар қисми **Artifacts** файли **`Shumora-SmartCounter-APK`**-ро зеркашӣ кунед — дар дохили он **`app-debug.apk`** барои насб дар телефони Android омода аст.
 
-  <a href="https://aistudio.google.com/apps">Start building</a>
+## Фармонҳои локалӣ
 
-</div>
+```bash
+npm install
+npm run apk:prepare
+```
