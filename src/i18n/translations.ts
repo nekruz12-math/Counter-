@@ -101,7 +101,7 @@ export interface SmartTranslations {
 
 export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
   tg: {
-    appName: 'Smart Counter',
+    appName: 'Counter',
     navHome: 'Асосӣ',
     navStats: 'Омор',
     navGoals: 'Мақсадҳо',
@@ -199,7 +199,7 @@ export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
     weekdaysFull: ['Душанбе', 'Сешанбе', 'Чоршанбе', 'Панҷшанбе', 'Ҷумъа', 'Шанбе', 'Якшанбе'],
   },
   ru: {
-    appName: 'Smart Counter',
+    appName: 'Counter',
     navHome: 'Главная',
     navStats: 'Статистика',
     navGoals: 'Цели',
@@ -297,7 +297,7 @@ export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
     weekdaysFull: ['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'],
   },
   en: {
-    appName: 'Smart Counter',
+    appName: 'Counter',
     navHome: 'Home',
     navStats: 'Stats',
     navGoals: 'Goals',

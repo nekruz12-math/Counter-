@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   build-apk:
-    name: Build Shumora Android APK
+    name: Build Counter Android APK
     runs-on: ubuntu-latest
 
     steps:
@@ -30,19 +30,26 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
-      - name: Setup Android SDK
+      - name: Setup Android SDK 36
         uses: android-actions/setup-android@v3
+        with:
+          packages: |
+            platforms;android-36
+            build-tools;36.0.0
+            platform-tools
 
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then
-            npm ci
+            npm ci --no-audit --no-fund
           else
-            npm install
+            npm install --no-audit --no-fund
           fi
 
-      - name: Build web assets
-        run: npm run build
+      - name: Type check and build web assets
+        run: |
+          npm run lint
+          npm run build
 
       - name: Prepare Capacitor Android project
         run: |
@@ -56,7 +63,10 @@ jobs:
           MANIFEST="android/app/src/main/AndroidManifest.xml"
           if [ -f "$MANIFEST" ]; then
             if ! grep -q "android.permission.VIBRATE" "$MANIFEST"; then
-              sed -i 's|</manifest>|    <uses-permission android:name="android.permission.VIBRATE" />\n    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>|' "$MANIFEST"
+              sed -i 's|</manifest>|    <uses-permission android:name="android.permission.VIBRATE" />\n</manifest>|' "$MANIFEST"
+            fi
+            if ! grep -q "android.permission.POST_NOTIFICATIONS" "$MANIFEST"; then
+              sed -i 's|</manifest>|    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />\n</manifest>|' "$MANIFEST"
             fi
           fi
 
@@ -82,11 +92,11 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --no-daemon
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Shumora-SmartCounter-APK
+          name: Counter-Android-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30

@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.shumora.smartcounter',
-  appName: 'Шумора',
+  appId: 'com.counter.smartcounter',
+  appName: 'Counter',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
