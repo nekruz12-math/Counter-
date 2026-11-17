@@ -367,8 +367,17 @@ export default function App() {
         // Ignore storage quota errors
       }
     };
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushOnHide();
+      }
+    };
     window.addEventListener('pagehide', flushOnHide);
-    return () => window.removeEventListener('pagehide', flushOnHide);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('pagehide', flushOnHide);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, []);
 
   // 24-hour Daily Goal rollover + Daily Reminder Scheduler
@@ -469,7 +478,13 @@ export default function App() {
           let nextStreak = c.streak;
           let nextDate = c.lastCountDate;
           if (c.streakEnabled && c.lastCountDate !== today) {
-            nextStreak = c.lastCountDate === yesterday ? c.streak + 1 : Math.max(1, c.streak);
+            if (c.lastCountDate === null) {
+              nextStreak = Math.max(1, c.streak);
+            } else if (c.lastCountDate === yesterday) {
+              nextStreak = c.streak + 1;
+            } else {
+              nextStreak = 1;
+            }
             nextDate = today;
           }
 

@@ -68,7 +68,7 @@ export function CounterEditorView({
   const [showHistory, setShowHistory] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
 
-  const palette = COUNTER_THEMES[color];
+  const palette = COUNTER_THEMES[color] || COUNTER_THEMES.terracotta;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -441,11 +441,12 @@ export function CounterEditorView({
               {/* Reset Counter (Preserves Limit) */}
               <button
                 type="button"
+                disabled={locked || initialCounter.count === 0}
                 onClick={() => {
                   onResetCounter(initialCounter.id);
                   setCountStr('0');
                 }}
-                className="w-full min-h-[54px] px-4 rounded-2xl bg-white dark:bg-[#231B18] border border-slate-200 dark:border-[#352A25] flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-[#2C221E] transition-colors cursor-pointer text-left"
+                className="w-full min-h-[54px] px-4 rounded-2xl bg-white dark:bg-[#231B18] border border-slate-200 dark:border-[#352A25] flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-[#2C221E] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer text-left"
               >
                 <div className="flex items-center gap-3">
                   <RotateCcw className="w-5 h-5 text-slate-500 dark:text-slate-400 shrink-0" aria-hidden="true" />

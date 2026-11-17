@@ -31,12 +31,16 @@ jobs:
           java-version: '21'
 
       - name: Setup Android SDK 36
-        uses: android-actions/setup-android@v3
-        with:
-          packages: |
-            platforms;android-36
-            build-tools;36.0.0
-            platform-tools
+        run: |
+          SDK_ROOT="${ANDROID_HOME:-$ANDROID_SDK_ROOT}"
+          SDKMANAGER=$(command -v sdkmanager || find "$SDK_ROOT" -name sdkmanager -type f 2>/dev/null | head -n 1)
+          if [ -z "$SDKMANAGER" ]; then
+            echo "sdkmanager not found in $SDK_ROOT"
+            exit 1
+          fi
+          echo "Using sdkmanager: $SDKMANAGER (root: $SDK_ROOT)"
+          (yes || true) | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --licenses > /dev/null 2>&1 || true
+          (yes || true) | "$SDKMANAGER" --sdk_root="$SDK_ROOT" "platform-tools" "platforms;android-36" "build-tools;36.0.0"
 
       - name: Install dependencies
         run: |
