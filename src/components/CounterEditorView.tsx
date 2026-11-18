@@ -48,24 +48,20 @@ export function CounterEditorView({
   const [name, setName] = useState(initialCounter?.name ?? '');
 
   // Numeric fields use sample placeholders (намунавӣ) so tapping them does not require deleting pre-filled numbers
-  const [countStr, setCountStr] = useState(
-    mode === 'edit' && initialCounter && initialCounter.count > 0
-      ? String(initialCounter.count)
-      : '',
+  const [countPlaceholder, setCountPlaceholder] = useState<number>(
+    initialCounter?.count ?? 0,
   );
+  const [countStr, setCountStr] = useState('');
+
   const [limitPlaceholder, setLimitPlaceholder] = useState<number>(
     initialCounter?.limit ?? 33,
   );
-  const [limitStr, setLimitStr] = useState(
-    mode === 'edit' && initialCounter && !QUICK_LIMITS.includes(initialCounter.limit)
-      ? String(initialCounter.limit)
-      : '',
+  const [limitStr, setLimitStr] = useState('');
+
+  const [dailyGoalPlaceholder] = useState<number>(
+    initialCounter?.dailyGoal ?? 0,
   );
-  const [dailyGoalStr, setDailyGoalStr] = useState(
-    mode === 'edit' && initialCounter && (initialCounter.dailyGoal ?? 0) > 0
-      ? String(initialCounter.dailyGoal)
-      : '',
-  );
+  const [dailyGoalStr, setDailyGoalStr] = useState('');
 
   const [unit, setUnit] = useState(initialCounter?.unit ?? '');
   const [color, setColor] = useState<CounterColorId>(initialCounter?.color ?? 'terracotta');
@@ -80,14 +76,19 @@ export function CounterEditorView({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim() || (language === 'tg' ? 'Ҳисобкунак' : 'Counter');
-    const parsedCount = countStr.trim() ? Number.parseInt(countStr, 10) : 0;
+    const parsedCount = countStr.trim() ? Number.parseInt(countStr, 10) : countPlaceholder;
     const parsedLimit = limitStr.trim() ? Number.parseInt(limitStr, 10) : limitPlaceholder;
-    const parsedDailyGoal = dailyGoalStr.trim() ? Number.parseInt(dailyGoalStr, 10) : 0;
+    const parsedDailyGoal = dailyGoalStr.trim()
+      ? Number.parseInt(dailyGoalStr, 10)
+      : dailyGoalPlaceholder;
 
-    const safeCount = Number.isFinite(parsedCount) ? Math.max(0, parsedCount) : 0;
-    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1 ? parsedLimit : limitPlaceholder;
+    const safeCount = Number.isFinite(parsedCount) ? Math.max(0, parsedCount) : countPlaceholder;
+    const safeLimit =
+      Number.isFinite(parsedLimit) && parsedLimit >= 1 ? parsedLimit : limitPlaceholder;
     const safeDailyGoal =
-      Number.isFinite(parsedDailyGoal) && parsedDailyGoal >= 0 ? parsedDailyGoal : 0;
+      Number.isFinite(parsedDailyGoal) && parsedDailyGoal >= 0
+        ? parsedDailyGoal
+        : dailyGoalPlaceholder;
 
     onSave({
       name: trimmedName,
@@ -180,7 +181,7 @@ export function CounterEditorView({
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
-                  placeholder={String(initialCounter?.count ?? 0)}
+                  placeholder={String(countPlaceholder)}
                   value={countStr}
                   onChange={(e) => setCountStr(sanitizeDigits(e.target.value))}
                   className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
@@ -268,7 +269,7 @@ export function CounterEditorView({
                 type="text"
                 inputMode="numeric"
                 pattern="[0-9]*"
-                placeholder={String(initialCounter?.dailyGoal ?? 0)}
+                placeholder={String(dailyGoalPlaceholder)}
                 value={dailyGoalStr}
                 onChange={(e) => setDailyGoalStr(sanitizeDigits(e.target.value))}
                 className="w-24 min-h-[44px] px-3 text-right rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 shrink-0"
@@ -373,9 +374,10 @@ export function CounterEditorView({
               {/* Reset Counter (Preserves Limit) */}
               <button
                 type="button"
-                disabled={initialCounter.count === 0}
+                disabled={countPlaceholder === 0 && !countStr}
                 onClick={() => {
                   onResetCounter(initialCounter.id);
+                  setCountPlaceholder(0);
                   setCountStr('');
                 }}
                 className="w-full min-h-[54px] px-4 rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-[#23262E] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer text-left"

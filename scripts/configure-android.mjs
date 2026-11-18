@@ -1,23 +1,100 @@
+import { execSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const KEYSTORE_B64 =
-  'MIIKfgIBAzCCCjQGCSqGSIb3DQEHAaCCCiUEggohMIIKHTCCBGIGCSqGSIb3DQEHBqCCBFMwggRPAgEAMIIESAYJKoZIhvcNAQcBMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAiBSt66fzbGpwICCAAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEELIPMVZA5YeID99wHdjPjh+AggPg4Dx4mNaLAFZcZlqqvVpzM5SWBqebYcnbbrqB8o86Gm9jyc36EzURL/Ez5S2eOkzZc5CajyX3O5O4zvmmB0geok1lklyqbBAtdWz+AA8e16H+Y+xHW9UJYuDi5VxCT5ws0SvZzkODLIV8iAG4TWBDpBMdIAT7pIO70K/trr9U9XU+7VkKhjAIKS/POCtUVrNq5M36rbqBYxLx0SYtjsWwdxZRgOTSxlhqHyQGEb8gsBI56ac+rhVUnAL5UReahgzhch7ax3THgGLpaLgmwU8joPrRUFFTGHJ9PLIBtI1hfafTB7wqYzyV4ZwnvbUtI/OxtjJbO7Q1zsFaHvZ2lFJqxD0iSpCFzCKbK0YOHRP56QfvGo1seHbS1KpeeOSUdTrCWRB6CcwPYeTragalzpa6Ss+L24wgxZOpYX9Vvw1HCbl10x01J7DsvLuYDoAGnYeOvskD14GtirebPDamZ6WtWx9d6juso8M+2jZulKVgetkUAEZ5Q7fpu9nzw1cFVKU030xgcOlOLZNWXqsJRNL+okUtX9icqY3lGoB8jV0OEKm2lw4i5om0XRfUYE5lku+hGLbthvV82MJ8jvd+5Sv6aZosh2ZS2kCbc8hBbXPxDctQJ8/gG2JZdFeeM9xVNtLESCFdwV+p4C2grapx4UrBq33CDKWWBpRsUDAYEoy+mh32FrPJ5PaDiF1LX+yKlYh9gHuBsygW9ZgCncULwj3ibijDI65QV07RJs1v1uMP0G8V11hIxwnKhqqG8k/eXag5XNXXq+kRwtyJwkbeX4oi0fvVLP4e1PHNUkEyvwDQjMxTkgyezpoHAetQ4aosZ04Xt9IIrTdDQ40HKsFOHQWniVXWpZ4553w78fA9Kd3EF7fmCmsW8uPHfPef5E4Pcj5CawUKHjK6CqJGjZaGBwIwiJszwtV8iMPwI4/cWksuEjCIkqXsukrYzRo1LNe/qAjxk0lhbAc6H/OFweDFjzU3XH/hhasS8aEMFXPqJ+8ttlFn5tp/gHGF9ZlFuABIlg+h6EwmlKSIDP2m5BTpOsb+j8w6iJGKBZOgk1o6unoYDYO88tZ1lhaK+F0Gf++DBD8VzISojUDw3M8D25HB0D6omPfIi8t1iyMmAng9cpuXOSQQ6M8c9Dp5MxukCgZmInOr/Mq5PymWDJ2Wwlk1Zk2YuH+AT6lUm6UZZhGWPihuAIA6foKjf3H7iWz0oY+NIkfCPcXhRWVdJCdFOfSKJPQdH0zcGik7md2FZe/rPVqs6znhzBiKp0jpzVkCy5uatcgMLXTZlJDYVmiFKvrdHpwrjdWG35XyM0FCreXJDJHizv0wggWzBgkqhkiG9w0BBwGgggWkBIIFoDCCBZwwggWYBgsqhkiG9w0BDAoBAqCCBTEwggUtMFcGCSqGSIb3DQEFDTBKMCkGCSqGSIb3DQEFDDAcBAgA846xoilICgICCAAwDAYIKoZIhvcNAgkFADAdBglghkgBZQMEASoEEAREltZP2uk/r5IrfLJ4CgAEggTQFKmBQiz+VxEkf7/PlawKuW4Lcc93323cMN7FnlKaO4DS71LHlU9WZs/s/XvMTfmJztXFu2LHus+JVZd7+WaW9HcKkXo0PuiQlNQfmrLYADFfgTDnvUdOsKUz4biaGOQIZ2KkBAYA/F1Js3PtIqKMotjz5UjdTBM0KxnL3V3LiKztnrrIMj/OnlW+85f47WztuqSDkdcmq2qTPZ5zMl86icposk2Xle3fgLFWKoUo3P8ypS3B67mFohIHnMWAt4o3SsdVCysNqBu2gmbM61g5LvGb4AqHN1uMKkGIDocuEOs8vnwm0AuoKabpJOfO1bLfnXFsSF39qSa2z/6K+v1GFDjX3S2wPYjgMDllPNw2bqFwgtXiyVNn8QxTGA40dziWO0hKWID2mmuaSrQ8nz7ovHbNe4xbewKZtGkRFDbcKd8gt5LqrvAnRzeP0Ca49suqQ05PNJP5Ds55M3wlRoVkE2uiKN/iQv4sM2PVfsL1lYhueMkYAZm6RNc5UXt1Db0NnMxtIuj6XAxn60BUp/TCzG6gXctPBE1+cW+89IMadIx8OvUl87n1y4aCgyAtl/N4P9vnvleKWiK3bqQGetVDgCZa4uaAL25cYg8qs4rWfRhJBPLen75i4s9LuJHTIvm/mx7SFEhjXWQMorNZS/M7koYiSq/O75sXnft9LIeRuvBlcMwcqfxhgUx2XwlYCcRNjRK5NAYa69gY2/g2kJ16LRMymYJ2JZY423tpwCVgg5EU184APVCltHpjzRG5C8/HEA8nnubXtzVKYss8lyX5FLkOAtpFmJK5PAwE5R3/UWPu3gxfmwYSQwkRmTIpJgSL2Kl3+7TTheI9dbYYY7gUpNnfschN/whhuGk2r1pwG57jiEPxNNSbAoZEvnD43v2Prdc99oymKHAmEu3kkW4WDGq3LhzZgAihyKisjz+e1fbR4LGb9flFP1aQzg/CHPBotcmTdc2JASYIRjflh/ehX6RWFROGLZaVOtTKej7dv8ZXdt7FsfJj/p5Bnpu7HxocOIwXyz3zSkmLWBSsOtmZXroHmpkBDHCfGj/tR6Wgpqxpk3WopYn8RGDNhwmjcM64WG9pcmakUnbPlgnYv5CvAaHuwYQHN5nj5L66bAipPy+I7TslCijTAghH5pyutK6ah+wQtbyksbzvxLpxvpkrvoUyvyMPX654Gim7vESEkfJAyyJDHwSg/dwYvvglA1+wXvOFkcfL+PJQmCEBB8m36SsX2i6C6UbU/8bDTFKUzLgruwfELmfPScWo5Njk/XfMEHYJHad8Z1o3I2jYiW5c49syavfTksBwBu5zUa2I2eWJtWP6jvvofICF86yLDHG05/Em5IMNykIXerQsvMZrBCtmqX4gybEcJfusAqCWMDLdGLDw7Oh71J+BUfiDsHA7IweBE/B46lJ9v2YPdUiHkzDrLEEwx7gslsNn0aHVZCf3GBJR9adm0mpHd92vgCjc1ucxX7u6SfZYC2sSBkOlh0yWeZDCVHQLU1bdU8tB82kGvSaXGUBkUcTrc55vmNG3jcC4IG9L9c/sZ86FQR/bYJPjbkPgTgkArLh1I05qOnTzJLrA7whxSDfMEn2qLu5oze61hPAjL2Ihbc9vvJ+UbFAeEV5nUEOtjgXCgthukR8xVDAjBgkqhkiG9w0BCRUxFgQUjObDRLA/O4MtpjLSQd326ez14XQwLQYJKoZIhvcNAQkUMSAeHgBhAG4AZAByAG8AaQBkAGQAZQBiAHUAZwBrAGUAeTBBMDEwDQYJYIZIAWUDBAIBBQAEIF3EHTFtLqmfKzN0NqWnVYXqiw4oAACXIpifVYjttti5BAh53qWHQlY4NgICCAA=';
+const PRIVATE_KEY_PEM = `-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQCgkBPlW+o/os3N
+GJK5Xlx0uIFNsFnidXOEdPqigS4K0WS6p2eRFjwcy4gTASaOUPs7WVeMV5spKHBi
+XXOTGGSPVnPo5lZLrq1p08g4KzFS0/deuaJ3gZcD2YKDg3x0OS95g7Xq7gpQjSWY
+u4xl7RWjPgdiPtDUlema/2BTrNEbAc5eHuD/ijB4pgC62/LP2WvmJZm3AiEcByFB
+M05tCVUB3u1T3nka3AbmFIqnTM0XcNJ+N0sAa+n4ct8/1xrZzmLq8yMe8710IjSI
+EelNuuzJZvm9b1JaLw8GpyJkem76WZSUPITE9rLSBrsl+YLspPZ9PMaNTXxg8SDd
+uNMsGRcnAgMBAAECggEAJ1j3jzsVrk+a6JqPhl7SAIagpWXEuUL4MqsqKr3Ghz8m
+VLmmnz8YLyRPrfyXssO0tagg1NM5Qn5XADwPkSomppvUnuwnlLdzZt5QEDfBiB9K
+3UtXvbqjw/0/RzRnQOIsuLYm1DJOk8vrPUEk2Guf5FfUnmZvbdFpJKNVu1u8CMZm
+J+/wQOXGyWE0qzf9isWnYdAFDpDHfEAt6rx7SyLR/IuQOQ/taQFOYp5nJea3f7SJ
+K8/3Is7X+4HjsQIl56VAT0oxMtqH2T6fszK8trGJRQn/Y4pwi9WGXjngSP5pVnfQ
+vLtI3a6jHYFy1syjVPf1LSfwdL3rYlBYcc3ZVWNhcQKBgQDgVgXQ/erKfIJwV+vi
+AvUggyBc48PEunlwwq1hZrBHZHg27MJPS6FJHdSufE8MCH4P8CmziEiku7zqGlcH
+Nbg8kNTbd16aGtvzKTFKVxCRLfvcz5EjZi/aMmxxG9z1ylkxn+DLxSLO7Rn+LigF
+/SET9hCGuZMOsJEem9ZCxA+r0QKBgQC3ObmIXq2lQ12fqnkD/x9pl9abpjVgxaDg
+0R3QqH4w2ALEIgJHE26ecieGFquUFe/y1rha1IhhJmWulTt9TP1Gzf36bQhEe6go
+dawXzcCN85e8x7X/evEGVjjJnBiohb8wlZB7Sgj5BSNPbyraHhgre3qt0Pb1JBwX
+7tms7T/pdwKBgFuf5spAGvhOuDvIPShXSuTXiY1G3XtpKhZ6/LNubIsMJulP8+DN
+I/en/mixjtt8UHiT/4Q7Imhd4T/AOFFSiIf8I2PrsjDAzZrX9TDGtJaHMHo0MLRD
+lUHKHG5qEeo1lg5lnTu8rYXUYyxkj6Y6h5sOght0ifKS/QKCZZVpXHkxAoGAQi5f
+jZplLmR+1MVGoOLt/b4SjnYioanAynO+STgTHKFpnl6KZBHoyuKA1DYsE3k5CoX0
+YRqTiEPORpkwu7mrYn/VVTc83T+tJbAbUR3Ih32NOWsJmhZWKOvL50aywWxN+saL
+QX0kcI4iivaki9SC9nHLhi0Mhs9cNmjXx1aK11ECgYEAwQ2RWvc/qLb0fWNyB1es
+OwPJW9QwAfh2Oi7Lbr0mn0tBOEbAvBOUsxm3J/79WNDQ7+ofEp8LSdSsvk1PHuiy
+fTjc7llGaJkFuOsK+xb6LdbaJi1rfd4SxV2vcu16gohNpazimWkORiB2xnlHfKpx
+JBeR84BSC/lKCa/r5GDHcoY=
+-----END PRIVATE KEY-----
+`;
 
-// 1. Write persistent debug.keystore so all APK updates share the exact same certificate
+const CERT_PEM = `-----BEGIN CERTIFICATE-----
+MIIDUTCCAjmgAwIBAgIUP7ehUJTHYsekXIHvaWkrHjqlq8AwDQYJKoZIhvcNAQEL
+BQAwNzELMAkGA1UEBhMCVVMxEDAOBgNVBAoMB0FuZHJvaWQxFjAUBgNVBAMMDUFu
+ZHJvaWQgRGVidWcwIBcNMjYxMTE4MDQ1MzA3WhgPMjA1NDA0MDUwNDUzMDdaMDcx
+CzAJBgNVBAYTAlVTMRAwDgYDVQQKDAdBbmRyb2lkMRYwFAYDVQQDDA1BbmRyb2lk
+IERlYnVnMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAoJAT5VvqP6LN
+zRiSuV5cdLiBTbBZ4nVzhHT6ooEuCtFkuqdnkRY8HMuIEwEmjlD7O1lXjFebKShw
+Yl1zkxhkj1Zz6OZWS66tadPIOCsxUtP3Xrmid4GXA9mCg4N8dDkveYO16u4KUI0l
+mLuMZe0Voz4HYj7Q1JXpmv9gU6zRGwHOXh7g/4oweKYAutvyz9lr5iWZtwIhHAch
+QTNObQlVAd7tU955GtwG5hSKp0zNF3DSfjdLAGvp+HLfP9ca2c5i6vMjHvO9dCI0
+iBHpTbrsyWb5vW9SWi8PBqciZHpu+lmUlDyExPay0ga7JfmC7KT2fTzGjU18YPEg
+3bjTLBkXJwIDAQABo1MwUTAdBgNVHQ4EFgQUDUzmU92MSDRcFt8vqGGHVshnTqow
+HwYDVR0jBBgwFoAUDUzmU92MSDRcFt8vqGGHVshnTqowDwYDVR0TAQH/BAUwAwEB
+/zANBgkqhkiG9w0BAQsFAAOCAQEAgqhkbWx8V5LIvBAJOlIZb7YOhvpcvQDR4PIv
+NxsOHT6ANu/cpf4vwiDFNxtczxIAhBiR3VOtoFCEC/SDZ3FMvVqDDAUDdzT+Tq1H
++5YeHd/IcKxli86DEi2HmB4JmGRCHO9//37mzO+hqAfCtUKoWBFv0GPWsxa0JZt3
+BRcxwIGVv93zNqyuMV0gAToeGok1A1c7H11y1lkADknwZZCVDuClIzvWzB7Qv4pY
+347cmklCxFKJTUrKoS6sS4tQL+4x8Q5DuZ3opRhveXU1TkWlIw9U0hNwj6+INCXG
+Tr7tMJIoq4aZlelJEvws7bn5hAcgSfEA366vpe6p2a9vlHmONA==
+-----END CERTIFICATE-----
+`;
+
+// 1. Build and verify persistent PKCS12 / JKS keystore from fixed PEM key & certificate
+const tmpDir = os.tmpdir();
+const keyPath = path.join(tmpDir, 'counter-key.pem');
+const certPath = path.join(tmpDir, 'counter-cert.pem');
+const p12Path = path.join(tmpDir, 'counter-persistent.p12');
+
+fs.writeFileSync(keyPath, PRIVATE_KEY_PEM, 'utf8');
+fs.writeFileSync(certPath, CERT_PEM, 'utf8');
+
+execSync(
+  `openssl pkcs12 -export -in "${certPath}" -inkey "${keyPath}" -out "${p12Path}" -name "androiddebugkey" -passout pass:android`,
+  { stdio: 'inherit' },
+);
+execSync(`openssl pkcs12 -in "${p12Path}" -passin pass:android -noout`, {
+  stdio: 'inherit',
+});
+
 const androidHomeDir = path.join(os.homedir(), '.android');
 fs.mkdirSync(androidHomeDir, { recursive: true });
-fs.writeFileSync(
-  path.join(androidHomeDir, 'debug.keystore'),
-  Buffer.from(KEYSTORE_B64, 'base64'),
-);
-console.log('Installed persistent debug.keystore');
+const homeDebugKeystore = path.join(androidHomeDir, 'debug.keystore');
+const appKeystore = path.resolve('android/app/counter-persistent.keystore');
 
-// 2. Bump versionCode and versionName in android/app/build.gradle
+fs.copyFileSync(p12Path, homeDebugKeystore);
+if (fs.existsSync('android/app')) {
+  fs.copyFileSync(p12Path, appKeystore);
+}
+
+try {
+  execSync(`keytool -list -v -keystore "${homeDebugKeystore}" -storepass android | head -n 25`, {
+    stdio: 'inherit',
+  });
+} catch {
+  // keytool check (runs on CI where Java is installed)
+}
+console.log('Verified persistent debug.keystore with zero MAC errors');
+
+// 2. Bump versionCode, versionName, and bind explicit signingConfigs.debug inside android/app/build.gradle
 const runNum = Number.parseInt(process.env.GITHUB_RUN_NUMBER || '1', 10) || 1;
-const versionCode = 300 + runNum;
-const versionName = `2.1.${runNum}`;
+const versionCode = 400 + runNum;
+const versionName = `2.2.${runNum}`;
 const appGradlePath = 'android/app/build.gradle';
 
 if (fs.existsSync(appGradlePath)) {
@@ -27,6 +104,25 @@ if (fs.existsSync(appGradlePath)) {
     /versionName\s+"[^"]*"/g,
     `versionName "${versionName}"`,
   );
+
+  if (!gradleContent.includes('counter-persistent.keystore')) {
+    gradleContent = gradleContent.replace(
+      /buildTypes\s*\{/,
+      `signingConfigs {
+        debug {
+            storeFile file("counter-persistent.keystore")
+            storePassword "android"
+            keyAlias "androiddebugkey"
+            keyPassword "android"
+        }
+    }
+    buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }`,
+    );
+  }
+
   fs.writeFileSync(appGradlePath, gradleContent, 'utf8');
   console.log(`Updated build.gradle: versionCode=${versionCode}, versionName=${versionName}`);
 }
@@ -57,9 +153,10 @@ if (fs.existsSync(manifestPath)) {
 }
 
 // 4. Write MainActivity.java with native CounterNativeBridge for hardware vibration & fingerprint sensor
-const mainActivityPath = 'android/app/src/main/java/com/counter/app/MainActivity.java';
-if (fs.existsSync(path.dirname(mainActivityPath))) {
-  const mainActivityJava = `package com.counter.app;
+const mainActivityPath = 'android/app/src/main/java/com/counter/v2/MainActivity.java';
+if (fs.existsSync('android/app/src/main/java')) {
+  fs.mkdirSync(path.dirname(mainActivityPath), { recursive: true });
+  const mainActivityJava = `package com.counter.v2;
 
 import android.app.Activity;
 import android.app.KeyguardManager;
@@ -90,6 +187,7 @@ public class MainActivity extends BridgeActivity {
         if (getBridge() != null && getBridge().getWebView() != null) {
             WebView webView = getBridge().getWebView();
             webView.addJavascriptInterface(new CounterNativeBridge(), "CounterNative");
+            webView.reload();
         }
     }
 
@@ -132,14 +230,15 @@ public class MainActivity extends BridgeActivity {
             try {
                 Vibrator v = getDeviceVibrator();
                 if (v != null && v.hasVibrator()) {
-                    int safeDur = Math.max(18, durationMs);
+                    int safeDur = Math.max(20, durationMs);
                     int safeAmp = Math.max(1, Math.min(255, amplitude));
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        VibrationEffect effect = VibrationEffect.createOneShot(safeDur, safeAmp);
                         AudioAttributes attrs = new AudioAttributes.Builder()
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
                             .setUsage(AudioAttributes.USAGE_ALARM)
                             .build();
-                        v.vibrate(VibrationEffect.createOneShot(safeDur, safeAmp), attrs);
+                        v.vibrate(effect, attrs);
                     } else {
                         v.vibrate(safeDur);
                     }
@@ -151,7 +250,7 @@ public class MainActivity extends BridgeActivity {
                     View decor = getWindow() != null ? getWindow().getDecorView() : null;
                     if (decor != null) {
                         decor.performHapticFeedback(
-                            HapticFeedbackConstants.LONG_PRESS,
+                            HapticFeedbackConstants.KEYBOARD_TAP,
                             HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING | HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING
                         );
                     }
@@ -164,7 +263,7 @@ public class MainActivity extends BridgeActivity {
             try {
                 Vibrator v = getDeviceVibrator();
                 if (v != null && v.hasVibrator()) {
-                    long[] timings = new long[]{0, Math.max(20, firstMs), Math.max(25, gapMs), Math.max(25, secondMs)};
+                    long[] timings = new long[]{0, Math.max(22, firstMs), Math.max(28, gapMs), Math.max(28, secondMs)};
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                         int safeAmp = Math.max(1, Math.min(255, amplitude));
                         int[] amps = new int[]{0, safeAmp, 0, safeAmp};

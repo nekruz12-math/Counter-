@@ -1,19 +1,19 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.counter.app',
+  appId: 'com.counter.v2',
   appName: 'Counter',
   webDir: 'dist',
   server: {
     androidScheme: 'https',
   },
   android: {
-    backgroundColor: '#121316',
+    backgroundColor: '#101216',
     allowMixedContent: false,
   },
   plugins: {
     LocalNotifications: {
-      iconColor: '#A4382A',
+      iconColor: '#E14B32',
     },
   },
 };

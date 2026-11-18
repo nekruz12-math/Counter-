@@ -501,15 +501,24 @@ export default function App() {
     preferences.hapticIntensity,
   ]);
 
-  const handleStepChange = useCallback((id: string, nextStep: number) => {
-    setCounters((prev) => {
-      const next = prev.map((c) =>
-        c.id === id ? { ...c, step: nextStep, updatedAt: Date.now() } : c,
+  const handleStepChange = useCallback(
+    (id: string, nextStep: number) => {
+      playTapFeedback(
+        'increment',
+        preferences.soundEnabled,
+        preferences.hapticEnabled,
+        preferences.hapticIntensity,
       );
-      persistStoreImmediately({ counters: next, preferences: latestStoreRef.current.preferences });
-      return next;
-    });
-  }, []);
+      setCounters((prev) => {
+        const next = prev.map((c) =>
+          c.id === id ? { ...c, step: nextStep, updatedAt: Date.now() } : c,
+        );
+        persistStoreImmediately({ counters: next, preferences: latestStoreRef.current.preferences });
+        return next;
+      });
+    },
+    [preferences.soundEnabled, preferences.hapticEnabled, preferences.hapticIntensity],
+  );
 
   const handleSaveEditor = useCallback(
     (draft: {
@@ -669,9 +678,9 @@ export default function App() {
             </div>
           </div>
 
-          {/* Sleek Elongated (+) Add Counter Button on the right side right below the word Counter */}
+          {/* Full-width Left-to-Right (+ Илова) Button right below the header */}
           {activeTab === 'home' && (
-            <div className="mt-2 flex items-center justify-end">
+            <div className="mt-2.5">
               <button
                 type="button"
                 onClick={() => {
@@ -685,9 +694,16 @@ export default function App() {
                 }}
                 aria-label={t.addCounter}
                 title={t.addCounter}
-                className="h-10 px-6 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-sm shadow-md shadow-sky-500/25 inline-flex items-center justify-center gap-1.5 transition-transform duration-150 active:scale-[0.94] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                className="w-full h-11 px-5 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-extrabold text-sm shadow-md shadow-sky-500/25 inline-flex items-center justify-center gap-2 transition-transform duration-150 active:scale-[0.98] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
               >
                 <Plus className="w-5 h-5 stroke-[2.75]" aria-hidden="true" />
+                <span>
+                  {preferences.language === 'tg'
+                    ? 'Илова'
+                    : preferences.language === 'ru'
+                      ? 'Добавить'
+                      : 'Add'}
+                </span>
               </button>
             </div>
           )}
