@@ -4,7 +4,6 @@ import {
   ChevronLeft,
   ChevronsDown,
   ChevronsUp,
-  Lock,
   RotateCcw,
   Settings,
   TrendingUp,
@@ -48,7 +47,7 @@ export function FocusCounterView({
       prevCountRef.current = counter.count;
       if (!powerSaver) {
         setIsPopping(true);
-        const timer = window.setTimeout(() => setIsPopping(false), 150);
+        const timer = window.setTimeout(() => setIsPopping(false), 160);
         return () => window.clearTimeout(timer);
       }
     }
@@ -59,8 +58,8 @@ export function FocusCounterView({
   const overflow = Math.max(counter.count - counter.limit, 0);
   const isReached = counter.limit > 0 && counter.count === counter.limit;
   const isExceeded = counter.limit > 0 && counter.count > counter.limit;
-  const canDecrement = !counter.locked && (counter.allowNegative || counter.count > 0);
-  const canReset = !counter.locked && counter.count !== 0;
+  const canDecrement = counter.count > 0;
+  const canReset = counter.count > 0;
 
   const hasDailyGoal = (counter.dailyGoal ?? 0) > 0;
   const dailyCount = counter.dailyCountDate === todayKey ? counter.dailyCount ?? 0 : 0;
@@ -79,7 +78,7 @@ export function FocusCounterView({
       } else if (e.key === 'ArrowUp' || e.key === ' ') {
         if (tag !== 'button') {
           e.preventDefault();
-          if (!counter.locked) onIncrement();
+          onIncrement();
         }
       } else if (e.key === 'ArrowDown') {
         e.preventDefault();
@@ -88,7 +87,7 @@ export function FocusCounterView({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [onClose, onIncrement, onDecrement, counter.locked, canDecrement]);
+  }, [onClose, onIncrement, onDecrement, canDecrement]);
 
   const digitCount = String(counter.count).length;
   const heroTextSize =
@@ -100,7 +99,7 @@ export function FocusCounterView({
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)] ${palette.focusBg} transition-colors duration-200`}
+      className={`flagship-enter fixed inset-0 z-50 flex flex-col pt-[env(safe-area-inset-top)] ${palette.focusBg} transition-colors duration-200`}
       role="dialog"
       aria-modal="true"
       aria-label={counter.name}
@@ -111,7 +110,7 @@ export function FocusCounterView({
           type="button"
           onClick={onClose}
           aria-label={t.navHome}
-          className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
+          className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.92] transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
         >
           <ChevronLeft className="w-6 h-6" aria-hidden="true" />
         </button>
@@ -120,7 +119,6 @@ export function FocusCounterView({
           <h2 className={`text-lg sm:text-xl font-bold tracking-tight truncate ${palette.focusText}`}>
             {counter.name}
           </h2>
-          {counter.locked && <Lock className={`w-4 h-4 shrink-0 ${palette.focusMuted}`} aria-hidden="true" />}
         </div>
 
         <div className="flex items-center gap-1 shrink-0">
@@ -130,7 +128,7 @@ export function FocusCounterView({
             onClick={onResetToZero}
             aria-label={t.resetCounterLabel}
             title={t.resetPreservesLimit}
-            className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] disabled:opacity-30 disabled:pointer-events-none transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
+            className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.92] disabled:opacity-30 disabled:pointer-events-none transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
           >
             <RotateCcw className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -139,7 +137,7 @@ export function FocusCounterView({
             type="button"
             onClick={onOpenSettings}
             aria-label={t.editCounterTitle}
-            className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
+            className={`min-h-[44px] min-w-[44px] rounded-2xl flex items-center justify-center hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.92] transition-[transform,background-color] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusText}`}
           >
             <Settings className="w-5 h-5" aria-hidden="true" />
           </button>
@@ -167,9 +165,7 @@ export function FocusCounterView({
 
           {/* Explicit Status Text */}
           <div className={`mt-3 flex flex-wrap items-center justify-center gap-2 text-sm font-semibold ${palette.focusMuted}`}>
-            {counter.locked ? (
-              <span>{t.lockedNotice}</span>
-            ) : isReached ? (
+            {isReached ? (
               <>
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-500" aria-hidden="true" />
                 <span>{t.limitReached}</span>
@@ -204,10 +200,9 @@ export function FocusCounterView({
         <div className="flex flex-col items-center gap-4">
           <button
             type="button"
-            disabled={counter.locked}
             onClick={() => onIncrement()}
             aria-label={`${counter.name} +${counter.step}`}
-            className={`w-44 h-44 sm:w-52 sm:h-52 rounded-[3rem] flex flex-col items-center justify-center shadow-xl transition-[transform,opacity,background-color,box-shadow] duration-150 active:scale-[0.93] disabled:opacity-40 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/40 ${palette.focusPrimaryBg} ${palette.focusPrimaryText}`}
+            className={`w-46 h-46 sm:w-52 sm:h-52 rounded-[3.25rem] flex flex-col items-center justify-center shadow-xl transition-[transform,background-color,box-shadow] duration-150 active:scale-[0.92] cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/40 ${palette.focusPrimaryBg} ${palette.focusPrimaryText}`}
           >
             <ChevronsUp className="w-16 h-16 sm:w-20 sm:h-20 stroke-[2.25]" aria-hidden="true" />
             {counter.step > 1 && (
@@ -222,7 +217,7 @@ export function FocusCounterView({
             disabled={!canDecrement}
             onClick={onDecrement}
             aria-label={`${counter.name} −${counter.step}`}
-            className={`w-28 h-24 sm:w-32 sm:h-28 rounded-[2.25rem] shadow-md flex items-center justify-center transition-[transform,opacity,background-color] duration-150 active:scale-[0.93] disabled:opacity-35 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/40 ${palette.focusSecondaryBg} ${palette.focusSecondaryText}`}
+            className={`w-28 h-24 sm:w-32 sm:h-28 rounded-[2.25rem] shadow-md flex items-center justify-center transition-[transform,opacity,background-color] duration-150 active:scale-[0.92] disabled:opacity-35 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/40 ${palette.focusSecondaryBg} ${palette.focusSecondaryText}`}
           >
             <ChevronsDown className="w-10 h-10 sm:w-12 sm:h-12 stroke-[2.25]" aria-hidden="true" />
           </button>
@@ -261,7 +256,7 @@ export function FocusCounterView({
           type="button"
           disabled={!canReset}
           onClick={onResetToZero}
-          className={`min-h-[48px] px-6 rounded-2xl shadow-sm inline-flex items-center gap-2 text-sm font-semibold transition-[transform,opacity,background-color] duration-150 active:scale-[0.96] disabled:opacity-35 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusSecondaryBg} ${palette.focusSecondaryText}`}
+          className={`min-h-[48px] px-6 rounded-2xl shadow-sm inline-flex items-center gap-2 text-sm font-semibold transition-[transform,opacity,background-color] duration-150 active:scale-[0.95] disabled:opacity-35 disabled:pointer-events-none cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500 ${palette.focusSecondaryBg} ${palette.focusSecondaryText}`}
         >
           <RotateCcw className="w-4 h-4" aria-hidden="true" />
           <span>{t.resetCounterLabel}</span>

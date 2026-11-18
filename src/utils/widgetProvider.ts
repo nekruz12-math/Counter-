@@ -9,10 +9,9 @@ export function getTodayKey(date: Date = new Date()): string {
 }
 
 export function selectMostFrequentCounter(counters: CounterItem[]): CounterItem | null {
-  const active = counters.filter((c) => !c.archived);
-  if (active.length === 0) return null;
+  if (counters.length === 0) return null;
 
-  const sorted = active.slice().sort((a, b) => {
+  const sorted = counters.slice().sort((a, b) => {
     const accessDiff = (b.accessCount ?? 0) - (a.accessCount ?? 0);
     if (accessDiff !== 0) return accessDiff;
 
@@ -43,7 +42,6 @@ export function buildWidgetSnapshot(counters: CounterItem[]): HomeWidgetSnapshot
     unit: top.unit,
     color: top.color,
     accessCount: top.accessCount ?? 0,
-    locked: top.locked,
     step: top.step ?? 1,
     updatedAt: Date.now(),
   };
@@ -81,7 +79,6 @@ export function readWidgetSnapshot(): HomeWidgetSnapshot | null {
       unit: typeof parsed.unit === 'string' ? parsed.unit : '',
       color: parsed.color ?? 'terracotta',
       accessCount: typeof parsed.accessCount === 'number' ? parsed.accessCount : 0,
-      locked: Boolean(parsed.locked),
       step: typeof parsed.step === 'number' ? parsed.step : 1,
       updatedAt: typeof parsed.updatedAt === 'number' ? parsed.updatedAt : Date.now(),
     };

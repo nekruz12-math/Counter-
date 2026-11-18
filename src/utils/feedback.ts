@@ -24,9 +24,9 @@ const HAPTIC_PATTERNS: Record<
   HapticIntensity,
   { tap: number; reset: number; limit: number[] }
 > = {
-  low: { tap: 6, reset: 10, limit: [12, 22, 16] },
-  medium: { tap: 14, reset: 20, limit: [22, 35, 32] },
-  high: { tap: 28, reset: 36, limit: [38, 45, 52] },
+  low: { tap: 24, reset: 38, limit: [40, 45, 65] },
+  medium: { tap: 48, reset: 65, limit: [55, 55, 95] },
+  high: { tap: 82, reset: 105, limit: [80, 60, 125] },
 };
 
 const NATIVE_IMPACT_MAP: Record<HapticIntensity, ImpactStyle> = {
@@ -35,17 +35,30 @@ const NATIVE_IMPACT_MAP: Record<HapticIntensity, ImpactStyle> = {
   high: ImpactStyle.Heavy,
 };
 
-export function triggerLightHaptic(): void {
-  if (Capacitor.isNativePlatform()) {
-    Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
-    return;
-  }
+function triggerBrowserVibrate(pattern: number | number[]): void {
   if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
     try {
-      navigator.vibrate(20);
+      navigator.vibrate(pattern);
     } catch {
-      // Ignore vibration errors
+      // Ignore vibration errors on restricted browsers
     }
+  }
+}
+
+export function triggerLightHaptic(): void {
+  triggerBrowserVibrate(30);
+  if (Capacitor.isNativePlatform()) {
+    Haptics.vibrate({ duration: 30 }).catch(() => {
+      Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+    });
+  }
+}
+
+export function triggerErrorHaptic(): void {
+  triggerBrowserVibrate([50, 45, 70]);
+  if (Capacitor.isNativePlatform()) {
+    Haptics.vibrate({ duration: 65 }).catch(() => {});
+    Haptics.notification({ type: NotificationType.Error }).catch(() => {});
   }
 }
 
@@ -56,26 +69,32 @@ export function playTapFeedback(
   hapticIntensity: HapticIntensity = 'medium',
 ): void {
   if (hapticEnabled) {
+    const pattern = HAPTIC_PATTERNS[hapticIntensity] || HAPTIC_PATTERNS.medium;
+
+    // 1. Always fire synchronous navigator.vibrate immediately during user gesture
+    if (type === 'limit') {
+      triggerBrowserVibrate(pattern.limit);
+    } else if (type === 'reset') {
+      triggerBrowserVibrate(pattern.reset);
+    } else {
+      triggerBrowserVibrate(pattern.tap);
+    }
+
+    // 2. Also invoke Capacitor Native Android Haptics.vibrate({ duration }) for guaranteed hardware motor pulse
     if (Capacitor.isNativePlatform()) {
       if (type === 'limit') {
-        Haptics.notification({ type: NotificationType.Success }).catch(() => {});
+        Haptics.vibrate({ duration: pattern.limit[0] }).catch(() => {});
+        window.setTimeout(() => {
+          Haptics.vibrate({ duration: pattern.limit[2] }).catch(() => {});
+        }, pattern.limit[0] + pattern.limit[1]);
+      } else if (type === 'reset') {
+        Haptics.vibrate({ duration: pattern.reset }).catch(() => {
+          Haptics.impact({ style: NATIVE_IMPACT_MAP[hapticIntensity] }).catch(() => {});
+        });
       } else {
-        Haptics.impact({
-          style: NATIVE_IMPACT_MAP[hapticIntensity] || ImpactStyle.Medium,
-        }).catch(() => {});
-      }
-    } else if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-      try {
-        const pattern = HAPTIC_PATTERNS[hapticIntensity] || HAPTIC_PATTERNS.medium;
-        if (type === 'limit') {
-          navigator.vibrate(pattern.limit);
-        } else if (type === 'reset') {
-          navigator.vibrate(pattern.reset);
-        } else {
-          navigator.vibrate(pattern.tap);
-        }
-      } catch {
-        // Ignore vibration errors on restricted devices
+        Haptics.vibrate({ duration: pattern.tap }).catch(() => {
+          Haptics.impact({ style: NATIVE_IMPACT_MAP[hapticIntensity] }).catch(() => {});
+        });
       }
     }
   }

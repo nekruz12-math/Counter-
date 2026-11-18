@@ -13,10 +13,10 @@ export async function syncAndroidStatusBar(theme: ThemeMode): Promise<void> {
     await StatusBar.setOverlaysWebView({ overlay: false });
     if (theme === 'dark') {
       await StatusBar.setStyle({ style: Style.Dark });
-      await StatusBar.setBackgroundColor({ color: '#16110F' });
+      await StatusBar.setBackgroundColor({ color: '#121316' });
     } else {
       await StatusBar.setStyle({ style: Style.Light });
-      await StatusBar.setBackgroundColor({ color: '#F8FAFC' });
+      await StatusBar.setBackgroundColor({ color: '#F4F5F7' });
     }
   } catch {
     // Ignore on platforms where StatusBar API is unavailable

@@ -37,15 +37,45 @@
   }
 }
 
+/* Flagship Counter Pop Animation */
 .count-pop {
   display: inline-block;
   transform: scale(1);
-  transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 170ms cubic-bezier(0.22, 1, 0.36, 1);
   will-change: transform;
 }
 
 .count-pop-active {
-  transform: scale(1.09);
+  transform: scale(1.085);
+}
+
+/* Flagship Smooth View Entrance */
+@keyframes flagshipFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.992);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.flagship-enter {
+  animation: flagshipFadeUp 210ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* PIN Error Shake */
+@keyframes pinShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-6px); }
+  80% { transform: translateX(6px); }
+}
+
+.pin-shake {
+  animation: pinShake 320ms cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
 @media (prefers-reduced-motion: reduce) {

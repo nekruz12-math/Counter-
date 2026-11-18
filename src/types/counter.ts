@@ -15,16 +15,6 @@ export type CounterColorId =
   | 'navy'
   | 'plum';
 
-export interface HistoryRecord {
-  id: string;
-  counterId: string;
-  counterName: string;
-  finalCount: number;
-  targetLimit: number;
-  reachedLimit: boolean;
-  timestamp: number;
-}
-
 export interface CounterItem {
   id: string;
   name: string;
@@ -36,15 +26,12 @@ export interface CounterItem {
   unit: string;
   color: CounterColorId;
   step: number;
-  locked: boolean;
-  allowNegative: boolean;
   streakEnabled: boolean;
   streak: number;
   lastCountDate: string | null;
   reminderTime: string;
   lastReminderDate?: string | null;
   accessCount: number;
-  archived: boolean;
   dailyActivity?: Record<string, number>;
   createdAt: number;
   updatedAt: number;
@@ -57,12 +44,17 @@ export interface AppPreferences {
   notificationsEnabled: boolean;
   powerSaver: boolean;
   theme: ThemeMode;
+  scheduleDarkMode: boolean;
+  solarLatitude?: number | null;
+  solarLongitude?: number | null;
+  pinCode: string | null;
+  biometricEnabled: boolean;
+  biometricCredentialId?: string | null;
   language: Language;
 }
 
 export interface SmartCounterStore {
   counters: CounterItem[];
-  history: HistoryRecord[];
   preferences: AppPreferences;
 }
 
@@ -76,7 +68,6 @@ export interface HomeWidgetSnapshot {
   unit: string;
   color: CounterColorId;
   accessCount: number;
-  locked: boolean;
   step: number;
   updatedAt: number;
 }
