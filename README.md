@@ -1,16 +1,9 @@
-# Counter — Android APK
+# Counter — Android APK (v2.0)
 
-Барномаи офлайнии Android-и **Counter** ба воситаи Capacitor барои сохтани **APK** тавассути **GitHub Actions** танзим шудааст.
+## 📲 [ЗЕРКАШИИ МУСТАҚИМИ COUNTER.APK (СКАЧАТЬ APK)](./Counter.apk?raw=true)
 
-## Чӣ тавр APK-ро аз GitHub гирифтан мумкин аст?
-
-1. Лоиҳаро ба репозиторияи **GitHub**-и худ боргузорӣ (`push` ё `upload`) кунед (дар шохаи `main` ё `master`).
-2. Дар GitHub ба бахши **Actions** дароед — раванди **Build Android APK** худкор оғоз мешавад.
-3. Пас аз анҷоми сохт, дар қисми **Artifacts** файли **`Counter-Android-APK`**-ро зеркашӣ кунед — дар дохили он **`app-debug.apk`** барои насб дар телефони Android омода аст.
-
-## Фармонҳои локалӣ
-
-```bash
-npm install
-npm run apk:prepare
-```
+Пас аз анҷоми сохтмон дар GitHub Actions:
+1. Файли **`Counter.apk`** худкор бевосита дар ҳамин **рӯйхати асосии файлҳои репозитория** (дар болои `README.md`) пайдо мешавад.
+2. Шумо метавонед:
+   - Бевосита тугмаи кабуди боло **«ЗЕРКАШИИ МУСТАҚИМИ COUNTER.APK»**-ро зер кунед, ё
+   - Дар рӯйхати файлҳо **`Counter.apk`** → **`Download`** (ё се нуқта `...` → `Download`)-ро пахш кунед — файл бе `.zip` рост ҳамчун `Counter.apk` ба телефон боргирӣ мешавад.

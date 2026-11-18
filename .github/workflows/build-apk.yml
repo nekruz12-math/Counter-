@@ -5,10 +5,12 @@ on:
     branches:
       - main
       - master
+    paths-ignore:
+      - 'Counter.apk'
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build-apk:
@@ -18,6 +20,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js 22
         uses: actions/setup-node@v4
@@ -64,12 +68,13 @@ jobs:
 
       - name: Configure Version 2.0, Persistent Signing Keystore, and Android Manifest
         run: |
-          # 1. Install persistent signing keystore so all APK updates share the exact same certificate
+          # 1. Install persistent signing keystore both in ~/.android and android/app/
           mkdir -p "$HOME/.android"
           KEYSTORE_B64="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"
           echo "$KEYSTORE_B64" | base64 -d > "$HOME/.android/debug.keystore"
+          echo "$KEYSTORE_B64" | base64 -d > "android/app/counter-persistent.keystore"
 
-          # 2. Bump versionCode and versionName in android/app/build.gradle for seamless in-place APK updates
+          # 2. Bump versionCode, versionName, and bind explicit signingConfigs.debug in android/app/build.gradle
           APP_GRADLE="android/app/build.gradle"
           RUN_NUM="${GITHUB_RUN_NUMBER:-1}"
           VERSION_CODE=$((200 + RUN_NUM))
@@ -77,7 +82,26 @@ jobs:
           if [ -f "$APP_GRADLE" ]; then
             sed -i "s/versionCode [0-9]\+/versionCode ${VERSION_CODE}/g" "$APP_GRADLE"
             sed -i "s/versionName \"[^\"]*\"/versionName \"${VERSION_NAME}\"/g" "$APP_GRADLE"
-            echo "Configured Android APK versionCode=${VERSION_CODE}, versionName=${VERSION_NAME}"
+            cat << 'EOF' >> "$APP_GRADLE"
+
+          android {
+              signingConfigs {
+                  debug {
+                      storeFile file("counter-persistent.keystore")
+                      storePassword "android"
+                      keyAlias "androiddebugkey"
+                      keyPassword "android"
+                      storeType "PKCS12"
+                  }
+              }
+              buildTypes {
+                  debug {
+                      signingConfig signingConfigs.debug
+                  }
+              }
+          }
+          EOF
+            echo "Configured Android APK versionCode=${VERSION_CODE}, versionName=${VERSION_NAME} with persistent keystore"
           fi
 
           # 3. Ensure permissions and allowBackup="true" in AndroidManifest.xml so app data is preserved on update
@@ -116,9 +140,29 @@ jobs:
           chmod +x gradlew
           ./gradlew assembleDebug --no-daemon
 
+      - name: Publish Counter.apk directly to repository file list & Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cp -f android/app/build/outputs/apk/debug/app-debug.apk ./Counter.apk
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f Counter.apk
+          if ! git diff --staged --quiet; then
+            git commit -m "chore: update Counter.apk in repository root [skip ci]"
+            BRANCH="${GITHUB_REF_NAME:-main}"
+            git pull --rebase origin "$BRANCH" || true
+            git push origin "HEAD:$BRANCH" || true
+          fi
+
+          # Also publish to GitHub Releases (latest) for 1-click direct download
+          gh release create latest ./Counter.apk --title "Counter v2.0 APK" --notes "Direct Android APK download (Counter.apk)" --clobber || \
+          gh release upload latest ./Counter.apk --clobber || true
+
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: Counter-Android-APK-v2.0
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: Counter.apk
           retention-days: 30

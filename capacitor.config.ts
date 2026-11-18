@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.counter.smartcounter',
+  appId: 'com.counter.app',
   appName: 'Counter',
   webDir: 'dist',
   server: {
