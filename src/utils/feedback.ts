@@ -2,6 +2,22 @@ import { Capacitor } from '@capacitor/core';
 import { Haptics, ImpactStyle, NotificationType } from '@capacitor/haptics';
 import type { HapticIntensity } from '../types/counter';
 
+interface CounterNativeBridge {
+  vibrate?: (durationMs: number, amplitude: number) => void;
+  vibratePattern?: (firstMs: number, gapMs: number, secondMs: number, amplitude: number) => void;
+  startFingerprintAuth?: () => boolean;
+  stopFingerprintAuth?: () => void;
+  promptDeviceCredential?: (title: string, subtitle: string) => boolean;
+  hasBiometricHardware?: () => boolean;
+}
+
+declare global {
+  interface Window {
+    CounterNative?: CounterNativeBridge;
+    __onNativeFingerprintResult?: (status: 'success' | 'failed' | 'error', message?: string) => void;
+  }
+}
+
 let sharedAudioContext: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
@@ -22,11 +38,11 @@ function getAudioContext(): AudioContext | null {
 
 const HAPTIC_PATTERNS: Record<
   HapticIntensity,
-  { tap: number; reset: number; limit: number[] }
+  { tap: number; reset: number; limit: [number, number, number]; amplitude: number }
 > = {
-  low: { tap: 24, reset: 38, limit: [40, 45, 65] },
-  medium: { tap: 48, reset: 65, limit: [55, 55, 95] },
-  high: { tap: 82, reset: 105, limit: [80, 60, 125] },
+  low: { tap: 30, reset: 45, limit: [45, 45, 75], amplitude: 160 },
+  medium: { tap: 55, reset: 75, limit: [65, 50, 110], amplitude: 220 },
+  high: { tap: 90, reset: 120, limit: [90, 55, 145], amplitude: 255 },
 };
 
 const NATIVE_IMPACT_MAP: Record<HapticIntensity, ImpactStyle> = {
@@ -34,6 +50,35 @@ const NATIVE_IMPACT_MAP: Record<HapticIntensity, ImpactStyle> = {
   medium: ImpactStyle.Medium,
   high: ImpactStyle.Heavy,
 };
+
+function triggerNativeBridgeVibrate(durationMs: number, amplitude = 255): boolean {
+  if (typeof window !== 'undefined' && window.CounterNative?.vibrate) {
+    try {
+      window.CounterNative.vibrate(durationMs, amplitude);
+      return true;
+    } catch {
+      // Fallback to Capacitor / Web Vibration API
+    }
+  }
+  return false;
+}
+
+function triggerNativeBridgePattern(
+  firstMs: number,
+  gapMs: number,
+  secondMs: number,
+  amplitude = 255,
+): boolean {
+  if (typeof window !== 'undefined' && window.CounterNative?.vibratePattern) {
+    try {
+      window.CounterNative.vibratePattern(firstMs, gapMs, secondMs, amplitude);
+      return true;
+    } catch {
+      // Fallback
+    }
+  }
+  return false;
+}
 
 function triggerBrowserVibrate(pattern: number | number[]): void {
   if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
@@ -46,18 +91,20 @@ function triggerBrowserVibrate(pattern: number | number[]): void {
 }
 
 export function triggerLightHaptic(): void {
-  triggerBrowserVibrate(30);
+  triggerNativeBridgeVibrate(40, 220);
+  triggerBrowserVibrate(35);
   if (Capacitor.isNativePlatform()) {
-    Haptics.vibrate({ duration: 30 }).catch(() => {
+    Haptics.vibrate({ duration: 40 }).catch(() => {
       Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
     });
   }
 }
 
 export function triggerErrorHaptic(): void {
-  triggerBrowserVibrate([50, 45, 70]);
+  triggerNativeBridgePattern(65, 45, 95, 255);
+  triggerBrowserVibrate([60, 45, 85]);
   if (Capacitor.isNativePlatform()) {
-    Haptics.vibrate({ duration: 65 }).catch(() => {});
+    Haptics.vibrate({ duration: 80 }).catch(() => {});
     Haptics.notification({ type: NotificationType.Error }).catch(() => {});
   }
 }
@@ -71,16 +118,24 @@ export function playTapFeedback(
   if (hapticEnabled) {
     const pattern = HAPTIC_PATTERNS[hapticIntensity] || HAPTIC_PATTERNS.medium;
 
-    // 1. Always fire synchronous navigator.vibrate immediately during user gesture
+    // 1. Direct Native Java Bridge (MainActivity.java -> Vibrator USAGE_ALARM + View HapticFeedback)
     if (type === 'limit') {
+      triggerNativeBridgePattern(
+        pattern.limit[0],
+        pattern.limit[1],
+        pattern.limit[2],
+        pattern.amplitude,
+      );
       triggerBrowserVibrate(pattern.limit);
     } else if (type === 'reset') {
+      triggerNativeBridgeVibrate(pattern.reset, pattern.amplitude);
       triggerBrowserVibrate(pattern.reset);
     } else {
+      triggerNativeBridgeVibrate(pattern.tap, pattern.amplitude);
       triggerBrowserVibrate(pattern.tap);
     }
 
-    // 2. Also invoke Capacitor Native Android Haptics.vibrate({ duration }) for guaranteed hardware motor pulse
+    // 2. Also invoke Capacitor Haptics plugin as secondary layer
     if (Capacitor.isNativePlatform()) {
       if (type === 'limit') {
         Haptics.vibrate({ duration: pattern.limit[0] }).catch(() => {});

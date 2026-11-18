@@ -124,12 +124,12 @@ export default function App() {
   });
   latestStoreRef.current = { counters, preferences };
 
-  // Immediate Auto-Save on every state change (dual-key primary + backup)
+  // Immediate Auto-Save on every state change (triple-key primary + backup + vault + IDB)
   useEffect(() => {
     persistStoreImmediately(latestStoreRef.current);
   }, [counters, preferences]);
 
-  // Extra lifecycle Auto-Save hooks for Android OS & browser events
+  // Extra lifecycle Auto-Save hooks + Auto-Lock when app is minimized/backgrounded on Android
   useEffect(() => {
     const flushNow = () => {
       persistStoreImmediately(latestStoreRef.current);
@@ -137,6 +137,9 @@ export default function App() {
     const onVisibilityChange = () => {
       if (document.visibilityState === 'hidden') {
         flushNow();
+        if (latestStoreRef.current.preferences.pinCode) {
+          setIsLocked(true);
+        }
       }
     };
     window.addEventListener('pagehide', flushNow);
@@ -146,8 +149,11 @@ export default function App() {
 
     let stateHandle: { remove: () => Promise<void> } | null = null;
     if (Capacitor.isNativePlatform()) {
-      void CapApp.addListener('appStateChange', () => {
+      void CapApp.addListener('appStateChange', ({ isActive }) => {
         flushNow();
+        if (!isActive && latestStoreRef.current.preferences.pinCode) {
+          setIsLocked(true);
+        }
       }).then((h) => {
         stateHandle = h;
       });
@@ -281,16 +287,25 @@ export default function App() {
     };
   }, []);
 
-  const handleOpenFocus = useCallback((id: string) => {
-    setCounters((prev) => {
-      const next = prev.map((c) =>
-        c.id === id ? { ...c, accessCount: (c.accessCount ?? 0) + 1 } : c,
+  const handleOpenFocus = useCallback(
+    (id: string) => {
+      playTapFeedback(
+        'increment',
+        preferences.soundEnabled,
+        preferences.hapticEnabled,
+        preferences.hapticIntensity,
       );
-      persistStoreImmediately({ counters: next, preferences: latestStoreRef.current.preferences });
-      return next;
-    });
-    setFocusCounterId(id);
-  }, []);
+      setCounters((prev) => {
+        const next = prev.map((c) =>
+          c.id === id ? { ...c, accessCount: (c.accessCount ?? 0) + 1 } : c,
+        );
+        persistStoreImmediately({ counters: next, preferences: latestStoreRef.current.preferences });
+        return next;
+      });
+      setFocusCounterId(id);
+    },
+    [preferences.soundEnabled, preferences.hapticEnabled, preferences.hapticIntensity],
+  );
 
   const handleIncrement = useCallback(
     (id: string, stepOverride?: number) => {
@@ -593,11 +608,11 @@ export default function App() {
       : activeTab === 'stats'
         ? t.navStats
         : activeTab === 'goals'
-          ? t.navGoals
+           ? t.navGoals
           : t.navSettings;
 
   return (
-    <div className="min-h-dvh bg-[#F4F5F7] text-slate-900 dark:bg-[#121316] dark:text-[#F3EFEA] transition-colors duration-200">
+    <div className="min-h-dvh bg-[#F4F6FA] text-slate-900 dark:bg-[#101216] dark:text-[#F5F7FA] transition-colors duration-200">
       {/* 4-Digit PIN & Biometric Lock Screen */}
       {isLocked && preferences.pinCode && (
         <PinLockScreen
@@ -612,50 +627,75 @@ export default function App() {
         />
       )}
 
-      {/* Compact Sticky Top Header */}
-      <header className="sticky top-0 z-30 pt-[env(safe-area-inset-top)] bg-[#F4F5F7]/95 dark:bg-[#121316]/95 backdrop-blur-md">
-        <div className="max-w-5xl mx-auto h-14 px-4 sm:px-6 flex items-center justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold tracking-tight whitespace-nowrap shrink-0">
-            {headerTitle}
-          </h1>
+      {/* Compact Sticky Top Header + Sleek Elongated (+) Button below Counter on the right */}
+      <header className="sticky top-0 z-30 pt-[env(safe-area-inset-top)] bg-[#F4F6FA]/95 dark:bg-[#101216]/95 backdrop-blur-md">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 pt-2.5 pb-2">
+          <div className="flex items-center justify-between gap-3">
+            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight whitespace-nowrap shrink-0">
+              {headerTitle}
+            </h1>
 
-          <div className="flex items-center gap-1.5">
-            {preferences.pinCode && (
+            <div className="flex items-center gap-1.5">
+              {preferences.pinCode && (
+                <button
+                  type="button"
+                  onClick={() => setIsLocked(true)}
+                  aria-label={t.lockNowBtn}
+                  title={t.lockNowBtn}
+                  className="min-h-[40px] min-w-[40px] rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer"
+                >
+                  <Lock className="w-4 h-4" aria-hidden="true" />
+                </button>
+              )}
+
               <button
                 type="button"
-                onClick={() => setIsLocked(true)}
-                aria-label={t.lockNowBtn}
-                title={t.lockNowBtn}
-                className="min-h-[42px] min-w-[42px] rounded-2xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer"
+                onClick={() =>
+                  setPreferences((prev) => {
+                    const nextLang =
+                      prev.language === 'tg' ? 'ru' : prev.language === 'ru' ? 'en' : 'tg';
+                    const nextPrefs = { ...prev, language: nextLang as AppPreferences['language'] };
+                    persistStoreImmediately({
+                      counters: latestStoreRef.current.counters,
+                      preferences: nextPrefs,
+                    });
+                    return nextPrefs;
+                  })
+                }
+                className="min-h-[40px] min-w-[40px] px-2.5 rounded-2xl flex items-center justify-center text-xs font-extrabold text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer uppercase"
               >
-                <Lock className="w-4 h-4" aria-hidden="true" />
+                {preferences.language === 'tg' ? 'TJ' : preferences.language.toUpperCase()}
               </button>
-            )}
-
-            <button
-              type="button"
-              onClick={() =>
-                setPreferences((prev) => {
-                  const nextLang =
-                    prev.language === 'tg' ? 'ru' : prev.language === 'ru' ? 'en' : 'tg';
-                  const nextPrefs = { ...prev, language: nextLang as AppPreferences['language'] };
-                  persistStoreImmediately({
-                    counters: latestStoreRef.current.counters,
-                    preferences: nextPrefs,
-                  });
-                  return nextPrefs;
-                })
-              }
-              className="min-h-[42px] min-w-[42px] px-2.5 rounded-2xl flex items-center justify-center text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 active:scale-[0.94] transition-[transform,background-color] cursor-pointer uppercase"
-            >
-              {preferences.language === 'tg' ? 'TJ' : preferences.language.toUpperCase()}
-            </button>
+            </div>
           </div>
+
+          {/* Sleek Elongated (+) Add Counter Button on the right side right below the word Counter */}
+          {activeTab === 'home' && (
+            <div className="mt-2 flex items-center justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  playTapFeedback(
+                    'increment',
+                    preferences.soundEnabled,
+                    preferences.hapticEnabled,
+                    preferences.hapticIntensity,
+                  );
+                  setEditorState({ mode: 'create' });
+                }}
+                aria-label={t.addCounter}
+                title={t.addCounter}
+                className="h-10 px-6 rounded-full bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white font-bold text-sm shadow-md shadow-sky-500/25 inline-flex items-center justify-center gap-1.5 transition-transform duration-150 active:scale-[0.94] cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+              >
+                <Plus className="w-5 h-5 stroke-[2.75]" aria-hidden="true" />
+              </button>
+            </div>
+          )}
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 pt-1.5 pb-[calc(7.25rem+env(safe-area-inset-bottom))]">
+      <main className="max-w-5xl mx-auto px-3.5 sm:px-6 pt-1.5 pb-[calc(6.75rem+env(safe-area-inset-bottom))]">
         {activeTab === 'home' && (
           <div className="flagship-enter">
             {/* 2-Column Side-by-Side Counter Grid (1 1) */}
@@ -726,7 +766,7 @@ export default function App() {
       {reminderAlert && (
         <div
           role="alert"
-          className="fixed top-16 left-4 right-4 sm:left-auto sm:right-6 z-40"
+          className="fixed top-20 left-4 right-4 sm:left-auto sm:right-6 z-40"
         >
           <div className="max-w-md mx-auto sm:mx-0 rounded-2xl bg-slate-900 text-white dark:bg-[#22252D] border border-white/10 px-4 py-3 shadow-xl flex items-center justify-between gap-3">
             <div className="flex items-start gap-2.5 min-w-0">
@@ -766,7 +806,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Undo Reset Toast (works both on Home and inside FocusCounterView) */}
+      {/* Undo Reset Toast */}
       {undoState && (
         <div
           role="status"
@@ -789,16 +829,16 @@ export default function App() {
         </div>
       )}
 
-      {/* Subtle Bottom Fade + Floating Navigation + Add Counter FAB */}
+      {/* Subtle Bottom Fade + Centered Floating Navigation */}
       <div
         aria-hidden="true"
-        className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F4F5F7] via-[#F4F5F7]/80 to-transparent dark:from-[#121316] dark:via-[#121316]/80 pointer-events-none z-20"
+        className="fixed bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-[#F4F6FA] via-[#F4F6FA]/80 to-transparent dark:from-[#101216] dark:via-[#101216]/80 pointer-events-none z-20"
       />
       <div className="fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] left-0 right-0 z-30 px-4 pointer-events-none">
-        <div className="max-w-md mx-auto flex items-center justify-center gap-3 pointer-events-auto">
+        <div className="max-w-sm mx-auto flex items-center justify-center pointer-events-auto">
           <nav
             aria-label={t.appName}
-            className="flex-1 h-14 px-1.5 rounded-full bg-white/95 dark:bg-[#1E2128]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xl flex items-center justify-between gap-1"
+            className="w-full h-14 px-2 rounded-full bg-white/95 dark:bg-[#1C1F26]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 shadow-xl flex items-center justify-between gap-1"
           >
             {(
               [
@@ -813,11 +853,19 @@ export default function App() {
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => {
+                    playTapFeedback(
+                      'increment',
+                      preferences.soundEnabled,
+                      preferences.hapticEnabled,
+                      preferences.hapticIntensity,
+                    );
+                    setActiveTab(id);
+                  }}
                   aria-label={label}
                   className={`h-11 rounded-full inline-flex items-center justify-center gap-1.5 transition-[transform,background-color,padding] duration-150 active:scale-[0.94] cursor-pointer whitespace-nowrap ${
                     isActive
-                      ? 'px-3.5 bg-sky-100 text-sky-900 dark:bg-[#B8CFF8] dark:text-[#111C30] font-bold shadow-xs'
+                      ? 'px-4 bg-sky-100 text-sky-900 dark:bg-[#82ACFF] dark:text-[#0B193B] font-extrabold shadow-xs'
                       : 'w-11 text-slate-600 dark:text-[#C8D3E8] hover:bg-black/5 dark:hover:bg-white/10'
                   }`}
                 >
@@ -827,17 +875,6 @@ export default function App() {
               );
             })}
           </nav>
-
-          {/* Add Counter (+) FAB */}
-          <button
-            type="button"
-            onClick={() => setEditorState({ mode: 'create' })}
-            aria-label={t.addCounter}
-            title={t.addCounter}
-            className="w-14 h-14 rounded-full bg-sky-600 hover:bg-sky-700 dark:bg-[#34548A] dark:hover:bg-[#3F63A0] text-white shadow-xl flex items-center justify-center transition-transform duration-150 active:scale-[0.91] shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-sky-500/40"
-          >
-            <Plus className="w-6 h-6 stroke-[2.5]" aria-hidden="true" />
-          </button>
         </div>
       </div>
 

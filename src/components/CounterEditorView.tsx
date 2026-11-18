@@ -46,9 +46,27 @@ export function CounterEditorView({
   t,
 }: CounterEditorViewProps) {
   const [name, setName] = useState(initialCounter?.name ?? '');
-  const [countStr, setCountStr] = useState(String(initialCounter?.count ?? 0));
-  const [limitStr, setLimitStr] = useState(String(initialCounter?.limit ?? 100));
-  const [dailyGoalStr, setDailyGoalStr] = useState(String(initialCounter?.dailyGoal ?? 0));
+
+  // Numeric fields use sample placeholders (намунавӣ) so tapping them does not require deleting pre-filled numbers
+  const [countStr, setCountStr] = useState(
+    mode === 'edit' && initialCounter && initialCounter.count > 0
+      ? String(initialCounter.count)
+      : '',
+  );
+  const [limitPlaceholder, setLimitPlaceholder] = useState<number>(
+    initialCounter?.limit ?? 33,
+  );
+  const [limitStr, setLimitStr] = useState(
+    mode === 'edit' && initialCounter && !QUICK_LIMITS.includes(initialCounter.limit)
+      ? String(initialCounter.limit)
+      : '',
+  );
+  const [dailyGoalStr, setDailyGoalStr] = useState(
+    mode === 'edit' && initialCounter && (initialCounter.dailyGoal ?? 0) > 0
+      ? String(initialCounter.dailyGoal)
+      : '',
+  );
+
   const [unit, setUnit] = useState(initialCounter?.unit ?? '');
   const [color, setColor] = useState<CounterColorId>(initialCounter?.color ?? 'terracotta');
   const [reminderTime, setReminderTime] = useState(initialCounter?.reminderTime ?? '');
@@ -57,15 +75,17 @@ export function CounterEditorView({
 
   const palette = COUNTER_THEMES[color] || COUNTER_THEMES.terracotta;
 
+  const sanitizeDigits = (raw: string) => raw.replace(/[^\d]/g, '');
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = name.trim() || (language === 'tg' ? 'Ҳисобкунак' : 'Counter');
-    const parsedCount = Number.parseInt(countStr, 10);
-    const parsedLimit = Number.parseInt(limitStr, 10);
-    const parsedDailyGoal = Number.parseInt(dailyGoalStr, 10);
+    const parsedCount = countStr.trim() ? Number.parseInt(countStr, 10) : 0;
+    const parsedLimit = limitStr.trim() ? Number.parseInt(limitStr, 10) : limitPlaceholder;
+    const parsedDailyGoal = dailyGoalStr.trim() ? Number.parseInt(dailyGoalStr, 10) : 0;
 
     const safeCount = Number.isFinite(parsedCount) ? Math.max(0, parsedCount) : 0;
-    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1 ? parsedLimit : 100;
+    const safeLimit = Number.isFinite(parsedLimit) && parsedLimit >= 1 ? parsedLimit : limitPlaceholder;
     const safeDailyGoal =
       Number.isFinite(parsedDailyGoal) && parsedDailyGoal >= 0 ? parsedDailyGoal : 0;
 
@@ -80,6 +100,8 @@ export function CounterEditorView({
       streakEnabled,
     });
   };
+
+  const effectiveLimit = limitStr.trim() ? Number(limitStr) : limitPlaceholder;
 
   return (
     <div
@@ -139,11 +161,11 @@ export function CounterEditorView({
               onChange={(e) => setName(e.target.value)}
               placeholder={t.namePlaceholder}
               autoFocus={mode === 'create'}
-              className="w-full bg-transparent text-lg font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none"
+              className="w-full bg-transparent text-lg font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
             />
           </div>
 
-          {/* Value, Total Limit & Unit Row */}
+          {/* Value, Total Limit & Unit Row — Numbers shown as sample placeholders (намунавӣ) */}
           <div className="rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 p-4 space-y-3">
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div>
@@ -155,12 +177,13 @@ export function CounterEditorView({
                 </label>
                 <input
                   id="counter-value"
-                  type="number"
-                  min={0}
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder={String(initialCounter?.count ?? 0)}
                   value={countStr}
-                  onChange={(e) => setCountStr(e.target.value)}
-                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  onChange={(e) => setCountStr(sanitizeDigits(e.target.value))}
+                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
 
@@ -173,12 +196,13 @@ export function CounterEditorView({
                 </label>
                 <input
                   id="counter-limit"
-                  type="number"
-                  min={1}
+                  type="text"
                   inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder={String(limitPlaceholder)}
                   value={limitStr}
-                  onChange={(e) => setLimitStr(e.target.value)}
-                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  onChange={(e) => setLimitStr(sanitizeDigits(e.target.value))}
+                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
 
@@ -195,7 +219,7 @@ export function CounterEditorView({
                   value={unit}
                   onChange={(e) => setUnit(e.target.value)}
                   placeholder={t.unitPlaceholder}
-                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] text-base font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                  className="w-full min-h-[42px] px-3 rounded-xl bg-slate-100 dark:bg-[#121316] text-base font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500"
                 />
               </div>
             </div>
@@ -203,12 +227,15 @@ export function CounterEditorView({
             {/* Quick Limit Presets */}
             <div className="flex items-center gap-1.5 flex-wrap pt-1">
               {QUICK_LIMITS.map((preset) => {
-                const active = Number(limitStr) === preset;
+                const active = effectiveLimit === preset;
                 return (
                   <button
                     key={preset}
                     type="button"
-                    onClick={() => setLimitStr(String(preset))}
+                    onClick={() => {
+                      setLimitPlaceholder(preset);
+                      setLimitStr('');
+                    }}
                     className={`min-h-[32px] px-3 rounded-xl font-mono text-xs font-bold transition-colors cursor-pointer ${
                       active
                         ? 'bg-sky-600 text-white dark:bg-sky-400 dark:text-slate-950'
@@ -222,7 +249,7 @@ export function CounterEditorView({
             </div>
           </div>
 
-          {/* Daily Goal (24h auto-reset) */}
+          {/* Daily Goal (24h auto-reset) — Sample placeholder number */}
           <div className="rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 p-4">
             <div className="flex items-start justify-between gap-4">
               <div className="flex items-start gap-3">
@@ -238,12 +265,13 @@ export function CounterEditorView({
               </div>
               <input
                 id="counter-daily-goal"
-                type="number"
-                min={0}
+                type="text"
                 inputMode="numeric"
+                pattern="[0-9]*"
+                placeholder={String(initialCounter?.dailyGoal ?? 0)}
                 value={dailyGoalStr}
-                onChange={(e) => setDailyGoalStr(e.target.value)}
-                className="w-24 min-h-[44px] px-3 text-right rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 focus:outline-none focus:ring-2 focus:ring-sky-500 shrink-0"
+                onChange={(e) => setDailyGoalStr(sanitizeDigits(e.target.value))}
+                className="w-24 min-h-[44px] px-3 text-right rounded-xl bg-slate-100 dark:bg-[#121316] font-mono tabular-nums text-lg font-bold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500 shrink-0"
               />
             </div>
           </div>
@@ -348,7 +376,7 @@ export function CounterEditorView({
                 disabled={initialCounter.count === 0}
                 onClick={() => {
                   onResetCounter(initialCounter.id);
-                  setCountStr('0');
+                  setCountStr('');
                 }}
                 className="w-full min-h-[54px] px-4 rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 flex items-center justify-between gap-3 hover:bg-slate-50 dark:hover:bg-[#23262E] disabled:opacity-45 disabled:pointer-events-none transition-colors cursor-pointer text-left"
               >

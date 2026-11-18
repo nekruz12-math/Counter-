@@ -1,6 +1,7 @@
 import {
   BatteryCharging,
   Bell,
+  CheckCircle2,
   Compass,
   Delete,
   Fingerprint,
@@ -21,7 +22,7 @@ import { useEffect, useMemo, useState } from 'react';
 import type { SmartTranslations } from '../i18n/translations';
 import type { AppPreferences, HapticIntensity, Language } from '../types/counter';
 import { enrollBiometricCredential } from '../utils/biometricAuth';
-import { playTapFeedback, triggerErrorHaptic } from '../utils/feedback';
+import { playTapFeedback } from '../utils/feedback';
 import {
   getNotificationPermissionState,
   requestDailyNotificationPermission,
@@ -46,10 +47,8 @@ export function AppSettingsView({
 }: AppSettingsViewProps) {
   const [notifPermission, setNotifPermission] = useState<string>('default');
   const [pinModalOpen, setPinModalOpen] = useState(false);
-  const [pinStep, setPinStep] = useState<'first' | 'confirm'>('first');
-  const [firstPin, setFirstPin] = useState('');
-  const [confirmPin, setConfirmPin] = useState('');
-  const [pinError, setPinError] = useState<string | null>(null);
+  const [enableBioAfterPin, setEnableBioAfterPin] = useState(false);
+  const [draftPin, setDraftPin] = useState('');
 
   useEffect(() => {
     void getNotificationPermissionState().then(setNotifPermission);
@@ -137,16 +136,13 @@ export function AppSettingsView({
     );
   };
 
-  const openPinSetup = () => {
-    setPinStep('first');
-    setFirstPin('');
-    setConfirmPin('');
-    setPinError(null);
+  const openPinSetup = (withBiometric = false) => {
+    setDraftPin('');
+    setEnableBioAfterPin(withBiometric);
     setPinModalOpen(true);
   };
 
-  const handlePinDigit = (digit: string) => {
-    setPinError(null);
+  const handlePinDigit = async (digit: string) => {
     playTapFeedback(
       'increment',
       preferences.soundEnabled,
@@ -154,35 +150,31 @@ export function AppSettingsView({
       preferences.hapticIntensity,
     );
 
-    if (pinStep === 'first') {
-      const next = (firstPin + digit).slice(0, 4);
-      setFirstPin(next);
-      if (next.length === 4) {
-        window.setTimeout(() => {
-          setPinStep('confirm');
-        }, 120);
+    const next = (draftPin + digit).slice(0, 4);
+    setDraftPin(next);
+
+    if (next.length === 4) {
+      playTapFeedback(
+        'limit',
+        preferences.soundEnabled,
+        preferences.hapticEnabled,
+        preferences.hapticIntensity,
+      );
+      if (enableBioAfterPin) {
+        const credId = await enrollBiometricCredential();
+        onUpdatePreferences({
+          pinCode: next,
+          biometricEnabled: true,
+          biometricCredentialId: credId,
+        });
+      } else {
+        onUpdatePreferences({
+          pinCode: next,
+        });
       }
-    } else {
-      const next = (confirmPin + digit).slice(0, 4);
-      setConfirmPin(next);
-      if (next.length === 4) {
-        if (next === firstPin) {
-          playTapFeedback(
-            'limit',
-            preferences.soundEnabled,
-            preferences.hapticEnabled,
-            preferences.hapticIntensity,
-          );
-          onUpdatePreferences({ pinCode: next });
-          setPinModalOpen(false);
-        } else {
-          triggerErrorHaptic();
-          setPinError(t.pinMismatchError);
-          setFirstPin('');
-          setConfirmPin('');
-          setPinStep('first');
-        }
-      }
+      window.setTimeout(() => {
+        setPinModalOpen(false);
+      }, 120);
     }
   };
 
@@ -193,16 +185,12 @@ export function AppSettingsView({
       preferences.hapticEnabled,
       preferences.hapticIntensity,
     );
-    if (pinStep === 'first') {
-      setFirstPin((p) => p.slice(0, -1));
-    } else {
-      setConfirmPin((p) => p.slice(0, -1));
-    }
+    setDraftPin((p) => p.slice(0, -1));
   };
 
   const handleBiometricToggle = async () => {
     if (!preferences.pinCode) {
-      openPinSetup();
+      openPinSetup(true);
       return;
     }
     const nextBio = !preferences.biometricEnabled;
@@ -230,8 +218,6 @@ export function AppSettingsView({
     medium: t.intensityMedium,
     high: t.intensityHigh,
   };
-
-  const activePinValue = pinStep === 'first' ? firstPin : confirmPin;
 
   return (
     <div className="flagship-enter space-y-5">
@@ -585,9 +571,9 @@ export function AppSettingsView({
             <button
               type="button"
               onClick={onLockNow}
-              className="min-h-[30px] px-2.5 rounded-xl bg-slate-100 dark:bg-[#121316] hover:bg-slate-200 dark:hover:bg-white/10 text-[11px] font-bold text-slate-700 dark:text-slate-300 inline-flex items-center gap-1 cursor-pointer"
+              className="min-h-[32px] px-3 rounded-xl bg-sky-500/12 dark:bg-sky-400/15 hover:bg-sky-500/20 text-xs font-bold text-sky-700 dark:text-sky-300 inline-flex items-center gap-1.5 cursor-pointer"
             >
-              <Lock className="w-3 h-3" aria-hidden="true" />
+              <Lock className="w-3.5 h-3.5" aria-hidden="true" />
               <span>{t.lockNowBtn}</span>
             </button>
           )}
@@ -599,13 +585,21 @@ export function AppSettingsView({
             <KeyRound
               className={`w-5 h-5 mt-0.5 shrink-0 ${
                 preferences.pinCode
-                  ? 'text-sky-600 dark:text-sky-400'
+                  ? 'text-emerald-600 dark:text-emerald-400'
                   : 'text-slate-400 dark:text-slate-500'
               }`}
               aria-hidden="true"
             />
             <div>
-              <span className="block text-sm font-semibold">{t.pinLockLabel}</span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-semibold">{t.pinLockLabel}</span>
+                {preferences.pinCode && (
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold">
+                    <CheckCircle2 className="w-3 h-3" aria-hidden="true" />
+                    <span>••••</span>
+                  </span>
+                )}
+              </div>
               <span className="block text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 {t.pinLockDesc}
               </span>
@@ -615,7 +609,7 @@ export function AppSettingsView({
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
-              onClick={openPinSetup}
+              onClick={() => openPinSetup(false)}
               className="min-h-[38px] px-3.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition-transform active:scale-95 cursor-pointer whitespace-nowrap"
             >
               {preferences.pinCode ? t.changePinBtn : t.setPinBtn}
@@ -680,20 +674,7 @@ export function AppSettingsView({
         </div>
       </section>
 
-      {/* Version 2.0.0 & Safe In-Place Update Protection Card */}
-      <section className="rounded-3xl bg-white/80 dark:bg-[#1B1D22]/80 border border-slate-200/70 dark:border-white/6 p-4 flex items-start gap-3">
-        <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" aria-hidden="true" />
-        <div className="min-w-0">
-          <p className="text-xs font-bold text-slate-800 dark:text-slate-100">
-            {t.versionFooterLabel}
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-            {t.versionDataSafeNote}
-          </p>
-        </div>
-      </section>
-
-      {/* PIN Setup Modal */}
+      {/* Single-Step Instant 4-Digit PIN Setup Modal */}
       {pinModalOpen && (
         <div
           role="dialog"
@@ -702,9 +683,7 @@ export function AppSettingsView({
         >
           <div className="flagship-enter w-full max-w-sm rounded-3xl bg-[#F4F5F7] dark:bg-[#181A20] border border-slate-200 dark:border-white/10 p-5 shadow-2xl">
             <div className="flex items-center justify-between gap-2 mb-3">
-              <h3 className="text-base font-bold">
-                {pinStep === 'first' ? t.enterNewPinTitle : t.confirmNewPinTitle}
-              </h3>
+              <h3 className="text-base font-bold">{t.enterNewPinTitle}</h3>
               <button
                 type="button"
                 onClick={() => setPinModalOpen(false)}
@@ -715,20 +694,14 @@ export function AppSettingsView({
               </button>
             </div>
 
-            {pinError && (
-              <p className="text-xs font-semibold text-rose-600 dark:text-rose-400 text-center mb-2">
-                {pinError}
-              </p>
-            )}
-
             {/* 4 PIN Dots */}
             <div className="my-5 flex items-center justify-center gap-4">
               {[0, 1, 2, 3].map((idx) => {
-                const filled = idx < activePinValue.length;
+                const filled = idx < draftPin.length;
                 return (
                   <span
                     key={idx}
-                    className={`w-3.5 h-3.5 rounded-full transition-all duration-150 ${
+                    className={`w-4 h-4 rounded-full transition-all duration-150 ${
                       filled
                         ? 'scale-110 bg-sky-600 dark:bg-sky-400'
                         : 'bg-slate-300 dark:bg-[#2F333D]'
@@ -744,7 +717,7 @@ export function AppSettingsView({
                 <button
                   key={digit}
                   type="button"
-                  onClick={() => handlePinDigit(digit)}
+                  onClick={() => void handlePinDigit(digit)}
                   className="h-14 rounded-2xl bg-white dark:bg-[#22252D] border border-slate-200/80 dark:border-white/8 font-mono text-xl font-bold active:scale-95 transition-transform cursor-pointer"
                 >
                   {digit}
@@ -753,7 +726,7 @@ export function AppSettingsView({
               <div />
               <button
                 type="button"
-                onClick={() => handlePinDigit('0')}
+                onClick={() => void handlePinDigit('0')}
                 className="h-14 rounded-2xl bg-white dark:bg-[#22252D] border border-slate-200/80 dark:border-white/8 font-mono text-xl font-bold active:scale-95 transition-transform cursor-pointer"
               >
                 0
