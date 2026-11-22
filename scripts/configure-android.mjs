@@ -93,8 +93,8 @@ console.log('Verified persistent debug.keystore with zero MAC errors');
 
 // 2. Bump versionCode, versionName, and bind explicit signingConfigs.debug inside android/app/build.gradle
 const runNum = Number.parseInt(process.env.GITHUB_RUN_NUMBER || '1', 10) || 1;
-const versionCode = 400 + runNum;
-const versionName = `2.2.${runNum}`;
+const versionCode = 500 + runNum;
+const versionName = `2.3.${runNum}`;
 const appGradlePath = 'android/app/build.gradle';
 
 if (fs.existsSync(appGradlePath)) {
@@ -162,6 +162,7 @@ import android.app.Activity;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.hardware.fingerprint.FingerprintManager;
 import android.media.AudioAttributes;
 import android.os.Build;
@@ -352,6 +353,25 @@ public class MainActivity extends BridgeActivity {
                 }
             } catch (Exception ignored) {}
             return false;
+        }
+
+        @JavascriptInterface
+        public void saveNativeVault(final String json) {
+            try {
+                if (json == null || json.isEmpty()) return;
+                SharedPreferences prefs = getSharedPreferences("counter_native_vault_v2", Context.MODE_PRIVATE);
+                prefs.edit().putString("latest_store_json", json).apply();
+            } catch (Exception ignored) {}
+        }
+
+        @JavascriptInterface
+        public String loadNativeVault() {
+            try {
+                SharedPreferences prefs = getSharedPreferences("counter_native_vault_v2", Context.MODE_PRIVATE);
+                return prefs.getString("latest_store_json", "");
+            } catch (Exception e) {
+                return "";
+            }
         }
     }
 }

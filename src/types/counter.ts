@@ -18,6 +18,7 @@ export type CounterColorId =
 export interface CounterItem {
   id: string;
   name: string;
+  note?: string;
   count: number;
   limit: number;
   dailyGoal: number;

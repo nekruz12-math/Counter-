@@ -20,6 +20,7 @@ interface CounterEditorViewProps {
   onClose: () => void;
   onSave: (draft: {
     name: string;
+    note: string;
     count: number;
     limit: number;
     dailyGoal: number;
@@ -46,6 +47,7 @@ export function CounterEditorView({
   t,
 }: CounterEditorViewProps) {
   const [name, setName] = useState(initialCounter?.name ?? '');
+  const [note, setNote] = useState(initialCounter?.note ?? '');
 
   // Numeric fields use sample placeholders (намунавӣ) so tapping them does not require deleting pre-filled numbers
   const [countPlaceholder, setCountPlaceholder] = useState<number>(
@@ -92,6 +94,7 @@ export function CounterEditorView({
 
     onSave({
       name: trimmedName,
+      note: note.trim(),
       count: safeCount,
       limit: safeLimit,
       dailyGoal: safeDailyGoal,
@@ -147,23 +150,42 @@ export function CounterEditorView({
         </header>
 
         <div className="px-4 space-y-3 mt-2">
-          {/* Name Field */}
-          <div className="rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 p-4">
-            <label
-              htmlFor="counter-name"
-              className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1"
-            >
-              {t.nameLabel}
-            </label>
-            <input
-              id="counter-name"
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t.namePlaceholder}
-              autoFocus={mode === 'create'}
-              className="w-full bg-transparent text-lg font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
-            />
+          {/* Name & Note Fields */}
+          <div className="rounded-3xl bg-white dark:bg-[#1B1D22] border border-slate-200/80 dark:border-white/8 p-4 space-y-3">
+            <div>
+              <label
+                htmlFor="counter-name"
+                className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1"
+              >
+                {t.nameLabel}
+              </label>
+              <input
+                id="counter-name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder={t.namePlaceholder}
+                autoFocus={mode === 'create'}
+                className="w-full bg-transparent text-lg font-semibold text-slate-900 dark:text-slate-50 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="pt-2.5 border-t border-slate-200/70 dark:border-white/8">
+              <label
+                htmlFor="counter-note"
+                className="block text-xs font-medium text-slate-500 dark:text-slate-400 mb-1"
+              >
+                {t.noteLabel}
+              </label>
+              <input
+                id="counter-note"
+                type="text"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder={t.notePlaceholder}
+                className="w-full bg-transparent text-sm font-medium text-slate-800 dark:text-slate-200 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none"
+              />
+            </div>
           </div>
 
           {/* Value, Total Limit & Unit Row — Numbers shown as sample placeholders (намунавӣ) */}

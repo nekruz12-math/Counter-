@@ -4,9 +4,11 @@ import {
   ChevronLeft,
   ChevronsDown,
   ChevronsUp,
+  PenLine,
   RotateCcw,
   Settings,
   TrendingUp,
+  X,
 } from 'lucide-react';
 import type { SmartTranslations } from '../i18n/translations';
 import type { CounterItem } from '../types/counter';
@@ -22,6 +24,7 @@ interface FocusCounterViewProps {
   onDecrement: () => void;
   onResetToZero: () => void;
   onStepChange: (nextStep: number) => void;
+  onNoteChange: (nextNote: string) => void;
   t: SmartTranslations;
 }
 
@@ -37,10 +40,12 @@ export function FocusCounterView({
   onDecrement,
   onResetToZero,
   onStepChange,
+  onNoteChange,
   t,
 }: FocusCounterViewProps) {
   const [isPopping, setIsPopping] = useState(false);
   const prevCountRef = useRef(counter.count);
+  const noteInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (prevCountRef.current !== counter.count) {
@@ -146,8 +151,48 @@ export function FocusCounterView({
 
       {/* Main Counter Stage */}
       <div className="relative flex-1 flex flex-col items-center justify-center px-6 pb-4 select-none">
+        {/* Inline Note (Заметка) Box Right Above the Numbers */}
+        <div className="w-full max-w-xs sm:max-w-sm mb-4">
+          <div
+            onClick={() => noteInputRef.current?.focus()}
+            className={`group flex items-center gap-2 px-3.5 py-2 rounded-2xl border border-black/10 dark:border-white/10 bg-black/[0.04] dark:bg-white/[0.06] focus-within:ring-2 focus-within:ring-sky-500/50 transition-all cursor-text`}
+          >
+            <PenLine
+              className={`w-4 h-4 shrink-0 opacity-65 ${palette.focusMuted}`}
+              aria-hidden="true"
+            />
+            <input
+              ref={noteInputRef}
+              type="text"
+              value={counter.note ?? ''}
+              onChange={(e) => onNoteChange(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.currentTarget.blur();
+                }
+              }}
+              placeholder={t.notePlaceholder}
+              aria-label={t.noteLabel}
+              className={`w-full bg-transparent text-center text-sm font-semibold focus:outline-none ${palette.focusText} placeholder:opacity-55`}
+            />
+            {counter.note && counter.note.trim().length > 0 && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNoteChange('');
+                }}
+                aria-label={t.cancelLabel}
+                className={`p-1 rounded-full hover:bg-black/10 dark:hover:bg-white/10 transition-colors cursor-pointer shrink-0 ${palette.focusMuted}`}
+              >
+                <X className="w-3.5 h-3.5" aria-hidden="true" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {/* Hero Number + Target Limit */}
-        <div className="flex flex-col items-center text-center mb-8 sm:mb-10">
+        <div className="flex flex-col items-center text-center mb-7 sm:mb-9">
           <div className="flex items-baseline justify-center gap-3">
             <span
               aria-live="polite"

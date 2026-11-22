@@ -12,6 +12,8 @@ export interface SmartTranslations {
   settingsSubtitle: string;
   nameLabel: string;
   namePlaceholder: string;
+  noteLabel: string;
+  notePlaceholder: string;
   valueLabel: string;
   limitLabel: string;
   dailyGoalLabel: string;
@@ -113,6 +115,8 @@ export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
     settingsSubtitle: 'Танзимоти ҳисобкунак',
     nameLabel: 'Ном',
     namePlaceholder: 'Масалан: Салавот, Истиғфор...',
+    noteLabel: 'Заметка (Ёддошт)',
+    notePlaceholder: 'Заметка нависед...',
     valueLabel: 'Қимати ҷорӣ',
     limitLabel: 'Лимити умумӣ',
     dailyGoalLabel: 'Мақсади рӯзона (24 соат)',
@@ -212,6 +216,8 @@ export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
     settingsSubtitle: 'Настройки счётчика',
     nameLabel: 'Название',
     namePlaceholder: 'Например: SLWT, Вода, Шаги...',
+    noteLabel: 'Заметка',
+    notePlaceholder: 'Напишите заметку...',
     valueLabel: 'Значение',
     limitLabel: 'Общий лимит',
     dailyGoalLabel: 'Дневная цель (24ч)',
@@ -311,6 +317,8 @@ export const SMART_TRANSLATIONS: Record<Language, SmartTranslations> = {
     settingsSubtitle: 'Counter Settings',
     nameLabel: 'Name',
     namePlaceholder: 'e.g. SLWT, Water, Reps...',
+    noteLabel: 'Note',
+    notePlaceholder: 'Write a note...',
     valueLabel: 'Value',
     limitLabel: 'Total Limit',
     dailyGoalLabel: 'Daily Goal (24h)',

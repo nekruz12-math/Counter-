@@ -170,6 +170,7 @@ export function normalizeCountersForToday(list: unknown[], today: string): Count
       return {
         id: String(c.id),
         name: typeof c.name === 'string' && c.name.trim() ? c.name : 'Counter',
+        note: typeof c.note === 'string' ? c.note : '',
         count:
           typeof c.count === 'number' && Number.isFinite(c.count) ? Math.max(0, c.count) : 0,
         limit:
@@ -281,6 +282,29 @@ export function loadStoreWithMigration(): SmartCounterStore {
         }
       }
     }
+
+    // Also check Android native SharedPreferences vault if available
+    const nativeBridge = (
+      window as unknown as {
+        CounterNative?: {
+          loadNativeVault?: () => string;
+          saveNativeVault?: (json: string) => void;
+        };
+      }
+    ).CounterNative;
+    if (nativeBridge && typeof nativeBridge.loadNativeVault === 'function') {
+      const nativeRaw = nativeBridge.loadNativeVault();
+      if (nativeRaw) {
+        const parsedNative = parseRawStore(nativeRaw, today);
+        if (parsedNative) {
+          const score = computeStoreScore(parsedNative);
+          if (!bestCandidate || score > bestScore) {
+            bestCandidate = parsedNative;
+            bestScore = score;
+          }
+        }
+      }
+    }
   } catch {
     // Ignore storage read errors
   }
@@ -304,7 +328,7 @@ export function loadStoreWithMigration(): SmartCounterStore {
 }
 
 /**
- * Synchronously writes to 3 localStorage keys + widget snapshot, and mirrors to IndexedDB.
+ * Synchronously writes to 3 localStorage keys + Android Native SharedPreferences + widget snapshot, and mirrors to IndexedDB.
  */
 export function persistStoreImmediately(store: SmartCounterStore): void {
   if (typeof window === 'undefined') return;
@@ -319,6 +343,18 @@ export function persistStoreImmediately(store: SmartCounterStore): void {
     window.localStorage.setItem(BACKUP_STORAGE_KEY, payload);
     window.localStorage.setItem(VAULT_STORAGE_KEY, payload);
     window.localStorage.setItem(VERSION_META_KEY, APP_VERSION);
+
+    const nativeBridge = (
+      window as unknown as {
+        CounterNative?: {
+          saveNativeVault?: (json: string) => void;
+        };
+      }
+    ).CounterNative;
+    if (nativeBridge && typeof nativeBridge.saveNativeVault === 'function') {
+      nativeBridge.saveNativeVault(payload);
+    }
+
     writeWidgetSnapshot(buildWidgetSnapshot(store.counters));
   } catch {
     // Ignore storage quota errors

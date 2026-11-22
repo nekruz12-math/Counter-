@@ -520,9 +520,20 @@ export default function App() {
     [preferences.soundEnabled, preferences.hapticEnabled, preferences.hapticIntensity],
   );
 
+  const handleNoteChange = useCallback((id: string, nextNote: string) => {
+    setCounters((prev) => {
+      const next = prev.map((c) =>
+        c.id === id ? { ...c, note: nextNote, updatedAt: Date.now() } : c,
+      );
+      persistStoreImmediately({ counters: next, preferences: latestStoreRef.current.preferences });
+      return next;
+    });
+  }, []);
+
   const handleSaveEditor = useCallback(
     (draft: {
       name: string;
+      note: string;
       count: number;
       limit: number;
       dailyGoal: number;
@@ -539,6 +550,7 @@ export default function App() {
         const newItem: CounterItem = {
           id: `cnt-${now}-${Math.random().toString(36).slice(2, 6)}`,
           name: draft.name,
+          note: draft.note,
           count: draft.count,
           limit: draft.limit,
           dailyGoal: draft.dailyGoal,
@@ -906,6 +918,7 @@ export default function App() {
           onDecrement={() => handleDecrement(focusCounter.id)}
           onResetToZero={() => handleResetToZero(focusCounter.id)}
           onStepChange={(step) => handleStepChange(focusCounter.id, step)}
+          onNoteChange={(nextNote) => handleNoteChange(focusCounter.id, nextNote)}
           t={t}
         />
       )}

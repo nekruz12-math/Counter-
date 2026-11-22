@@ -131,8 +131,17 @@ export const CounterCard = memo(function CounterCard({
         </div>
       </div>
 
+      {/* Optional Note (Заметка) shown above the numbers on the Main Screen */}
+      {counter.note && counter.note.trim().length > 0 && (
+        <p
+          className={`mt-1.5 text-xs font-semibold leading-snug line-clamp-2 break-words ${palette.cardMuted}`}
+        >
+          {counter.note.trim()}
+        </p>
+      )}
+
       {/* Center Value + Limit */}
-      <div className="my-2.5 flex items-baseline gap-1.5 flex-wrap">
+      <div className="my-2 flex items-baseline gap-1.5 flex-wrap">
         <span
           className={`count-pop ${
             isPopping ? 'count-pop-active' : ''
